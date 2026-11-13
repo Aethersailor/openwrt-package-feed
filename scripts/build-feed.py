@@ -22,10 +22,15 @@ APK_IMAGE = "mirror.gcr.io/library/alpine@sha256:28bd5fe8b56d1bd048e5babf5b10710
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "releases.json"
 PUBLISHED_STATE = "https://aethersailor.github.io/openwrt-package-feed/release-state.json"
+STABLE_TAG = re.compile(r"v\d+\.\d+(?:\.\d+(?:-r\d+)?|-r\d+)")
 
 
 def download(url, headers=None):
-    request = Request(url, headers={"User-Agent": "aethersailor-openwrt-package-feed", **(headers or {})})
+    headers = {"User-Agent": "aethersailor-openwrt-package-feed", **(headers or {})}
+    authorization = headers.pop("Authorization", None)
+    request = Request(url, headers=headers)
+    if authorization:
+        request.add_unredirected_header("Authorization", authorization)
     for attempt in range(3):
         try:
             with urlopen(request, timeout=90) as response:
@@ -36,8 +41,14 @@ def download(url, headers=None):
             time.sleep(2 ** attempt)
 
 
-def verified_asset(asset):
-    payload = download(asset["browser_download_url"])
+def verified_asset(asset, source):
+    if token_env := source.get("read_token_env"):
+        payload = download(
+            f"https://api.github.com/repos/{source['repository']}/releases/assets/{asset['id']}",
+            {"Accept": "application/octet-stream", "Authorization": f"Bearer {os.environ[token_env]}"},
+        )
+    else:
+        payload = download(asset["browser_download_url"])
     digest = "sha256:" + hashlib.sha256(payload).hexdigest()
     if len(payload) != asset["size"] or digest != asset.get("digest"):
         raise ValueError(f"Release asset checksum mismatch: {asset['name']}")
@@ -46,12 +57,17 @@ def verified_asset(asset):
 
 def resolve_release(source):
     repo = source["repository"]
+    api = f"https://api.github.com/repos/{repo}"
     headers = {"Accept": "application/vnd.github+json"}
-    if token := os.environ.get("GH_TOKEN"):
+    token_env = source.get("read_token_env", "GH_TOKEN")
+    token = os.environ.get(token_env)
+    if source.get("read_token_env") and not token:
+        raise ValueError(f"{repo} requires the {token_env} Actions secret")
+    if token:
         headers["Authorization"] = f"Bearer {token}"
-    data = json.loads(download(f"https://api.github.com/repos/{repo}/releases/latest", headers))
+    data = json.loads(download(f"{api}/releases/latest", headers))
     tag = data["tag_name"]
-    if data["draft"] or data["prerelease"] or not re.fullmatch(r"v\d+\.\d+\.\d+", tag):
+    if data["draft"] or data["prerelease"] or not STABLE_TAG.fullmatch(tag):
         raise ValueError(f"{repo} {tag} is not a stable release")
 
     assets = {asset["name"]: asset for asset in data["assets"] if asset["state"] == "uploaded"}
@@ -60,7 +76,7 @@ def resolve_release(source):
         raise ValueError(f"{repo} {tag} is missing {source['checksums']}")
 
     checksums = {}
-    for line in verified_asset(checksum_asset).decode("utf-8").splitlines():
+    for line in verified_asset(checksum_asset, source).decode("utf-8").splitlines():
         match = re.fullmatch(r"([a-f0-9]{64})\s+\*?(?:\./)?([^/]+\.apk)", line)
         if match:
             digest, filename = match.groups()
@@ -79,6 +95,9 @@ def resolve_release(source):
 
     package_field = "packages" if "packages" in source else "package"
     release = {"repository": repo, package_field: source[package_field], "tag": tag, "assets": checksums}
+    if source.get("read_token_env"):
+        commit = json.loads(download(f"{api}/commits/{tag}", headers))
+        release["source_commit"] = commit["sha"]
     return release, list(apk_assets.values())
 
 
@@ -108,14 +127,18 @@ def apk(site, *args, key=None):
     return subprocess.run(command, check=True, text=True, stdout=subprocess.PIPE).stdout
 
 
-def stage_package(site, release, asset, raw):
-    archive = verified_asset(asset)
+def stage_package(site, release, asset, source, raw):
+    archive = verified_asset(asset, source)
 
     temporary = raw / asset["name"]
     temporary.write_bytes(archive)
     package = json.loads(apk(site, "adbdump", "--format", "json", f"/feed/.incoming/{asset['name']}"))["info"]
     name, version, arch = package["name"], package["version"], package["arch"]
-    if name not in package_names(release) or not re.fullmatch(re.escape(release["tag"][1:]) + r"-r\d+", version):
+    tag_version = release["tag"][1:]
+    version_pattern = re.escape(tag_version)
+    if "-r" not in tag_version:
+        version_pattern += r"-r\d+"
+    if name not in package_names(release) or not re.fullmatch(version_pattern, version):
         raise ValueError(f"Unexpected package identity in {asset['name']}: {name} {version}")
     if not re.fullmatch(r"[a-z0-9][a-z0-9_.-]+", arch):
         raise ValueError(f"Invalid architecture in {asset['name']}: {arch}")
@@ -167,12 +190,31 @@ def index_packages(site, key, arch, entries):
     (directory / "index.json").write_text(json.dumps(index, indent=2) + "\n", encoding="utf-8")
 
 
+def source_archive_path(release):
+    name = release["repository"].split("/")[-1]
+    return f"sources/{name}-{release['tag']}.tar.gz"
+
+
+def stage_source_archive(site, release, source):
+    url = f"https://api.github.com/repos/{release['repository']}/tarball/{release['source_commit']}"
+    headers = {"Authorization": f"Bearer {os.environ[source['read_token_env']]}"}
+    destination = site / source_archive_path(release)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_bytes(download(url, headers))
+
+
 def write_site_home(site, releases, architectures):
-    release_links = "\n".join(
-        f'<li><a href="https://github.com/{escape(item["repository"])}/releases/tag/{escape(item["tag"])}">'
-        f'{escape(item["repository"].split("/")[-1])} {escape(item["tag"])}</a></li>'
-        for item in releases
-    )
+    release_links = []
+    for item in releases:
+        repo, tag = item["repository"], item["tag"]
+        if "source_commit" in item:
+            url = source_archive_path(item)
+            label = f"{repo.split('/')[-1]} {tag} 源码"
+        else:
+            url = f"https://github.com/{repo}/releases/tag/{tag}"
+            label = f"{repo.split('/')[-1]} {tag}"
+        release_links.append(f'<li><a href="{escape(url)}">{escape(label)}</a></li>')
+    releases_html = "\n".join(release_links)
     feeds = "\n".join(
         f'<li><a href="immortalwrt/apk/packages/{arch}/packages.adb">{arch}</a>'
         f' · <a href="immortalwrt/apk/packages/{arch}/index.json">版本索引</a></li>'
@@ -185,7 +227,7 @@ def write_site_home(site, releases, architectures):
         '<h1>Aethersailor OpenWrt Package Feed</h1>\n'
         '<p><a href="https://github.com/Aethersailor/openwrt-package-feed#readme">安装说明</a>'
         ' · <a href="keys/aethersailor-feed.pem">签名公钥</a></p>\n'
-        f'<h2>软件发布与对应源码</h2>\n<ul>\n{release_links}\n</ul>\n'
+        f'<h2>软件发布与对应源码</h2>\n<ul>\n{releases_html}\n</ul>\n'
         f'<h2>按架构浏览软件源</h2>\n<ul>\n{feeds}\n</ul>\n</html>\n',
         encoding="utf-8",
     )
@@ -211,7 +253,11 @@ def main():
     site.mkdir(parents=True)
     incoming = site / ".incoming"
     incoming.mkdir()
-    packages = [(release, asset) for release, assets in resolved for asset in assets]
+    packages = [
+        (release, asset, source)
+        for source, (release, assets) in zip(sources, resolved)
+        for asset in assets
+    ]
     architectures = defaultdict(list)
     with ThreadPoolExecutor(max_workers=6) as workers:
         for arch, name, version, filename in workers.map(
@@ -224,6 +270,10 @@ def main():
     if missing := expected - found:
         raise ValueError(f"Missing APKs for configured packages: {sorted(missing)}")
     add_shared_packages(site / "immortalwrt" / "apk" / "packages", architectures)
+
+    for source, release in zip(sources, releases):
+        if "source_commit" in release:
+            stage_source_archive(site, release, source)
 
     (site / "keys").mkdir()
     with tempfile.TemporaryDirectory(prefix="codex-apk-signing-") as private:

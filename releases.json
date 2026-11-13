@@ -19,6 +19,12 @@
         "luci-i18n-vantage-zh-cn"
       ],
       "checksums": "SHA256SUMS"
+    },
+    {
+      "repository": "Aethersailor/xgp-v3-screen",
+      "package": "luci-app-xgp-v3-screen",
+      "checksums": "SHA256SUMS",
+      "read_token_env": "XGP_RELEASE_READ_TOKEN"
     }
   ]
 }

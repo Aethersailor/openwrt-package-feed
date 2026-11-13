@@ -33,6 +33,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           APK_SIGNING_KEY: ${{ secrets.APK_SIGNING_KEY }}
+          XGP_RELEASE_READ_TOKEN: ${{ secrets.XGP_RELEASE_READ_TOKEN }}
           FORCE_REBUILD: ${{ inputs.force }}
         run: |
           args=()
