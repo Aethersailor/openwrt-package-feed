@@ -1,11 +1,12 @@
 # Aethersailor OpenWrt Package Feed
 
-Aethersailor 自行维护的公开软件源。软件源收录两个项目正式 Release 中的 APK，保留原包内容和版本号。
+Aethersailor 自行维护的公开软件源。软件源收录下列项目正式 Release 中的 APK，保留原包内容和版本号。
 
 | 软件 | APK 包名 | 正式 Release |
 | --- | --- | --- |
 | [SubConverter-Extended](https://github.com/Aethersailor/SubConverter-Extended/releases) | `subconverter-extended` | 自动同步 |
 | [Rule-Bot Client](https://github.com/Aethersailor/Rule-Bot-Client/releases) | `luci-app-rule-bot-client` | 自动同步 |
+| [Vantage](https://github.com/anothaDev/luci-theme-vantage/releases) | `luci-theme-vantage`、`luci-app-vantage`、`luci-i18n-vantage-theme-zh-cn`、`luci-i18n-vantage-zh-cn` | 自动同步 |
 
 ## 使用软件源
 
@@ -14,6 +15,8 @@ Aethersailor 自行维护的公开软件源。软件源收录两个项目正式 
 1. 下载软件源的签名公钥，并与仓库内的 [公钥](keys/aethersailor-feed.pem) 核对。将公钥安装到设备的 `/etc/apk/keys/aethersailor-feed.pem`。
 2. 将对应架构的 `packages.adb` URL 加入 `/etc/apk/repositories.d/customfeeds.list`。
 3. 运行 `apk update`，再用 `apk add` 安装所需的软件包。
+
+Vantage 的主题与仪表盘可分别安装。仅使用主题时，安装 `luci-theme-vantage`，简体中文包为 `luci-i18n-vantage-theme-zh-cn`。Vantage 的 APK 由上游面向 OpenWrt 25.12 构建，实际安装由设备的软件包管理器检查依赖。
 
 使用私有 ASU 时，服务端可放行 `https://aethersailor.github.io/openwrt-package-feed/immortalwrt/apk/packages/`。路由器上的 `owut` 需要启用额外软件源传递。保留配置升级前，可用 `sysupgrade -l` 确认软件源配置与公钥都在备份列表中。
 

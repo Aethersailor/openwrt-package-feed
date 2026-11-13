@@ -10,6 +10,7 @@ import json
 import os
 from pathlib import Path
 import re
+from shutil import copyfile
 import subprocess
 import tempfile
 import time
@@ -76,8 +77,13 @@ def resolve_release(source):
         if apk_assets[name].get("digest") != digest:
             raise ValueError(f"{repo} {tag} checksum differs from GitHub for {name}")
 
-    release = {"repository": repo, "package": source["package"], "tag": tag, "assets": checksums}
+    package_field = "packages" if "packages" in source else "package"
+    release = {"repository": repo, package_field: source[package_field], "tag": tag, "assets": checksums}
     return release, list(apk_assets.values())
+
+
+def package_names(release):
+    return release["packages"] if "packages" in release else [release["package"]]
 
 
 def published_state():
@@ -109,7 +115,7 @@ def stage_package(site, release, asset, raw):
     temporary.write_bytes(archive)
     package = json.loads(apk(site, "adbdump", "--format", "json", f"/feed/.incoming/{asset['name']}"))["info"]
     name, version, arch = package["name"], package["version"], package["arch"]
-    if name != release["package"] or not re.fullmatch(re.escape(release["tag"][1:]) + r"-r\d+", version):
+    if name not in package_names(release) or not re.fullmatch(re.escape(release["tag"][1:]) + r"-r\d+", version):
         raise ValueError(f"Unexpected package identity in {asset['name']}: {name} {version}")
     if not re.fullmatch(r"[a-z0-9][a-z0-9_.-]+", arch):
         raise ValueError(f"Invalid architecture in {asset['name']}: {arch}")
@@ -125,6 +131,24 @@ def stage_package(site, release, asset, raw):
     return arch, name, version, filename
 
 
+def add_shared_packages(package_root, architectures):
+    shared = architectures.pop("noarch", [])
+    if not shared:
+        return
+
+    staging = package_root / "noarch"
+    for arch, entries in architectures.items():
+        names = {name for name, _, _ in entries}
+        for name, version, filename in shared:
+            if name in names:
+                raise ValueError(f"Duplicate package {name} for {arch}")
+            copyfile(staging / filename, package_root / arch / filename)
+            entries.append((name, version, filename))
+    for _, _, filename in shared:
+        (staging / filename).unlink()
+    staging.rmdir()
+
+
 def index_packages(site, key, arch, entries):
     directory = site / "immortalwrt" / "apk" / "packages" / arch
     prefix = f"/feed/immortalwrt/apk/packages/{arch}"
@@ -134,7 +158,7 @@ def index_packages(site, key, arch, entries):
     packages = json.loads(apk(site, "adbdump", "--format", "json", f"{prefix}/packages.adb"))["packages"]
     versions = {package["name"]: package["version"] for package in packages}
     expected = {name: version for name, version, _ in entries}
-    if versions != expected or any(package["arch"] != arch for package in packages):
+    if versions != expected or any(package["arch"] not in (arch, "noarch") for package in packages):
         raise ValueError(f"Unexpected index content for {arch}")
     apk(site, "--keys-dir", "/feed/keys", "--repositories-file", "/dev/null",
         "--repository", f"{prefix}/packages.adb", "--arch", arch,
@@ -195,6 +219,11 @@ def main():
         ):
             architectures[arch].append((name, version, filename))
     incoming.rmdir()
+    expected = {name for release in releases for name in package_names(release)}
+    found = {name for entries in architectures.values() for name, _, _ in entries}
+    if missing := expected - found:
+        raise ValueError(f"Missing APKs for configured packages: {sorted(missing)}")
+    add_shared_packages(site / "immortalwrt" / "apk" / "packages", architectures)
 
     (site / "keys").mkdir()
     with tempfile.TemporaryDirectory(prefix="codex-apk-signing-") as private:

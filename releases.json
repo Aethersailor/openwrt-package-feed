@@ -9,6 +9,16 @@
       "repository": "Aethersailor/Rule-Bot-Client",
       "package": "luci-app-rule-bot-client",
       "checksums": "openwrt-checksums.txt"
+    },
+    {
+      "repository": "anothaDev/luci-theme-vantage",
+      "packages": [
+        "luci-theme-vantage",
+        "luci-app-vantage",
+        "luci-i18n-vantage-theme-zh-cn",
+        "luci-i18n-vantage-zh-cn"
+      ],
+      "checksums": "SHA256SUMS"
     }
   ]
 }
