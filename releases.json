@@ -21,6 +21,13 @@
       "checksums": "SHA256SUMS"
     },
     {
+      "repository": "vernesong/OpenClash",
+      "package": "luci-app-openclash",
+      "package_branch": "package",
+      "package_directory": "dev",
+      "checksums": "checksums.txt"
+    },
+    {
       "repository": "Aethersailor/xgp-v3-screen",
       "package": "luci-app-xgp-v3-screen",
       "checksums": "SHA256SUMS",

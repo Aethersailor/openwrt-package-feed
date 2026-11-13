@@ -1,12 +1,13 @@
 # Aethersailor OpenWrt Package Feed
 
-Aethersailor 自行维护的公开软件源。软件源收录下列项目正式 Release 中的 APK，保留原包内容和版本号。
+Aethersailor 自行维护的公开软件源。软件源同步下列项目发布的 APK，保留原包内容和版本号。
 
-| 软件 | APK 包名 | 正式 Release |
+| 软件 | APK 包名 | 发布来源 |
 | --- | --- | --- |
 | [SubConverter-Extended](https://github.com/Aethersailor/SubConverter-Extended/releases) | `subconverter-extended` | 自动同步 |
 | [Rule-Bot Client](https://github.com/Aethersailor/Rule-Bot-Client/releases) | `luci-app-rule-bot-client` | 自动同步 |
 | [Vantage](https://github.com/anothaDev/luci-theme-vantage/releases) | `luci-theme-vantage`、`luci-app-vantage`、`luci-i18n-vantage-theme-zh-cn`、`luci-i18n-vantage-zh-cn` | 自动同步 |
+| OpenClash | `luci-app-openclash` | [官方 dev APK](https://github.com/vernesong/OpenClash/tree/package/dev) |
 | 西瓜皮 V3 状态屏 | `luci-app-xgp-v3-screen` | 自动同步 |
 
 ## 使用软件源
@@ -25,7 +26,7 @@ Vantage 的主题与仪表盘可分别安装。仅使用主题时，安装 `luci
 
 ## 发布
 
-[Publish APK feed](.github/workflows/publish-feed.yml) 每 15 分钟检查 [releases.json](releases.json) 中的项目。工作流核对各项目最新正式 Release 的 APK 清单、SHA-256 和包元数据，确认附件齐全后发布。版本或文件摘要发生变化才会重新构建 Pages。校验失败时继续提供上一次成功发布的软件包。
+[Publish APK feed](.github/workflows/publish-feed.yml) 每 15 分钟检查 [releases.json](releases.json) 中配置的发布来源。工作流核对 APK 清单、SHA-256 和包元数据。OpenClash 从上游同一个提交读取 dev 版本、校验清单和 APK。校验失败时继续提供上一次成功发布的软件包。
 
 可手动运行工作流立即检查，或启用 `force` 重新发布。GitHub 的定时任务可能延后，且公开仓库连续 60 天无活动时可能被停用。当前线上版本见[发布状态](https://aethersailor.github.io/openwrt-package-feed/release-state.json)。
 
