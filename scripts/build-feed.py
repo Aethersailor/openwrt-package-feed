@@ -14,13 +14,13 @@ import subprocess
 import tempfile
 import time
 from urllib.error import HTTPError, URLError
-from urllib.parse import quote
 from urllib.request import Request, urlopen
 
 
 APK_IMAGE = "mirror.gcr.io/library/alpine@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b"
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "releases.json"
+PUBLISHED_STATE = "https://aethersailor.github.io/openwrt-package-feed/release-state.json"
 
 
 def download(url, headers=None):
@@ -35,21 +35,59 @@ def download(url, headers=None):
             time.sleep(2 ** attempt)
 
 
-def release_assets(release):
-    repo = release["repository"]
-    tag = quote(release["tag"], safe="")
+def verified_asset(asset):
+    payload = download(asset["browser_download_url"])
+    digest = "sha256:" + hashlib.sha256(payload).hexdigest()
+    if len(payload) != asset["size"] or digest != asset.get("digest"):
+        raise ValueError(f"Release asset checksum mismatch: {asset['name']}")
+    return payload
+
+
+def resolve_release(source):
+    repo = source["repository"]
     headers = {"Accept": "application/vnd.github+json"}
     if token := os.environ.get("GH_TOKEN"):
         headers["Authorization"] = f"Bearer {token}"
-    url = f"https://api.github.com/repos/{repo}/releases/tags/{tag}"
-    data = json.loads(download(url, headers))
-    if data["draft"] or data["prerelease"]:
+    data = json.loads(download(f"https://api.github.com/repos/{repo}/releases/latest", headers))
+    tag = data["tag_name"]
+    if data["draft"] or data["prerelease"] or not re.fullmatch(r"v\d+\.\d+\.\d+", tag):
         raise ValueError(f"{repo} {tag} is not a stable release")
 
-    assets = [asset for asset in data["assets"] if asset["name"].endswith(".apk")]
-    if len(assets) != release["asset_count"]:
-        raise ValueError(f"{repo} {tag} has {len(assets)} APKs, expected {release['asset_count']}")
-    return assets
+    assets = {asset["name"]: asset for asset in data["assets"] if asset["state"] == "uploaded"}
+    checksum_asset = assets.get(source["checksums"])
+    if not checksum_asset:
+        raise ValueError(f"{repo} {tag} is missing {source['checksums']}")
+
+    checksums = {}
+    for line in verified_asset(checksum_asset).decode("utf-8").splitlines():
+        match = re.fullmatch(r"([a-f0-9]{64})\s+\*?(?:\./)?([^/]+\.apk)", line)
+        if match:
+            digest, filename = match.groups()
+            if filename in checksums:
+                raise ValueError(f"Duplicate checksum entry for {filename}")
+            checksums[filename] = f"sha256:{digest}"
+
+    apk_assets = {name: asset for name, asset in assets.items() if name.endswith(".apk")}
+    if not checksums or apk_assets.keys() != checksums.keys():
+        missing = sorted(checksums.keys() - apk_assets.keys())
+        unlisted = sorted(apk_assets.keys() - checksums.keys())
+        raise ValueError(f"{repo} {tag} has an incomplete APK set: missing {missing}, unlisted {unlisted}")
+    for name, digest in checksums.items():
+        if apk_assets[name].get("digest") != digest:
+            raise ValueError(f"{repo} {tag} checksum differs from GitHub for {name}")
+
+    release = {"repository": repo, "package": source["package"], "tag": tag, "assets": checksums}
+    return release, list(apk_assets.values())
+
+
+def published_state():
+    try:
+        return json.loads(download(PUBLISHED_STATE, {"Cache-Control": "no-cache"}))
+    except HTTPError as error:
+        if error.code != 404:
+            raise
+        return None
+
 
 
 def apk(site, *args, key=None):
@@ -65,16 +103,13 @@ def apk(site, *args, key=None):
 
 
 def stage_package(site, release, asset, raw):
-    archive = download(asset["browser_download_url"])
-    digest = "sha256:" + hashlib.sha256(archive).hexdigest()
-    if len(archive) != asset["size"] or digest != asset.get("digest"):
-        raise ValueError(f"Release asset checksum mismatch: {asset['name']}")
+    archive = verified_asset(asset)
 
     temporary = raw / asset["name"]
     temporary.write_bytes(archive)
     package = json.loads(apk(site, "adbdump", "--format", "json", f"/feed/.incoming/{asset['name']}"))["info"]
     name, version, arch = package["name"], package["version"], package["arch"]
-    if (name, version) != (release["package"], release["version"]):
+    if name != release["package"] or not re.fullmatch(re.escape(release["tag"][1:]) + r"-r\d+", version):
         raise ValueError(f"Unexpected package identity in {asset['name']}: {name} {version}")
     if not re.fullmatch(r"[a-z0-9][a-z0-9_.-]+", arch):
         raise ValueError(f"Invalid architecture in {asset['name']}: {arch}")
@@ -135,14 +170,24 @@ def write_site_home(site, releases, architectures):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("output", type=Path)
+    parser.add_argument("--force", action="store_true", help="Rebuild an unchanged feed")
     args = parser.parse_args()
+
+    sources = json.loads(CATALOG.read_text(encoding="utf-8"))["releases"]
+    resolved = [resolve_release(source) for source in sources]
+    releases = [release for release, _ in resolved]
+    state = {"releases": releases}
+    if not args.force and state == published_state():
+        print("Published APKs already match the latest stable releases.")
+        return
+
     signing_key = os.environ.pop("APK_SIGNING_KEY")
+    subprocess.run(["docker", "pull", APK_IMAGE], check=True)
     site = args.output.resolve()
     site.mkdir(parents=True)
     incoming = site / ".incoming"
     incoming.mkdir()
-    releases = json.loads(CATALOG.read_text(encoding="utf-8"))["releases"]
-    packages = [(release, asset) for release in releases for asset in release_assets(release)]
+    packages = [(release, asset) for release, assets in resolved for asset in assets]
     architectures = defaultdict(list)
     with ThreadPoolExecutor(max_workers=6) as workers:
         for arch, name, version, filename in workers.map(
@@ -165,6 +210,7 @@ def main():
             index_packages(site, key, arch, entries)
 
     write_site_home(site, releases, architectures)
+    (site / "release-state.json").write_text(json.dumps(state, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(f"Published candidate: {len(packages)} APKs across {len(architectures)} architectures")
 
 

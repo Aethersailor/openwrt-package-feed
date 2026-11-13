@@ -2,17 +2,13 @@
   "releases": [
     {
       "repository": "Aethersailor/SubConverter-Extended",
-      "tag": "v1.11.4",
       "package": "subconverter-extended",
-      "version": "1.11.4-r0",
-      "asset_count": 17
+      "checksums": "SHA256SUMS"
     },
     {
       "repository": "Aethersailor/Rule-Bot-Client",
-      "tag": "v0.3.13",
       "package": "luci-app-rule-bot-client",
-      "version": "0.3.13-r1",
-      "asset_count": 30
+      "checksums": "openwrt-checksums.txt"
     }
   ]
 }
