@@ -72,8 +72,12 @@ kmods=$(awk '$2 ~ /^\*kmods\/[^/]+\/kmod-usb-net-rndis-.*\.apk$/ {
     split(substr($2, 2), path, "/"); print path[1] "/" path[2]; exit
 }' "$work/sha256sums")
 test -n "$kmods"
-docker run --rm -v "$output:/packages:ro" "$apk_image" \
-    apk add --simulate --initdb --root /tmp/fm350-root --arch "$arch" \
+docker run --rm -v "$output:/packages:ro" "$apk_image" sh -ec '
+    arch=$1
+    shift
+    apk add --initdb --root /tmp --arch "$arch" --repositories-file /dev/null
+    apk add --no-cache --simulate --root /tmp --arch "$arch" "$@"
+' fm350 "$arch" \
     --allow-untrusted --repositories-file /dev/null \
     --repository "$target/packages/packages.adb" \
     --repository "$target/$kmods/packages.adb" \
