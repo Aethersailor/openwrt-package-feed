@@ -29,7 +29,7 @@ Vantage 的主题与仪表盘可分别安装。仅使用主题时，安装 `luci
 
 ## 发布
 
-[Publish APK feed](.github/workflows/publish-feed.yml) 每 15 分钟检查 [releases.json](releases.json) 中配置的发布来源。工作流核对 APK 清单、SHA-256 和包元数据。OpenClash 从上游同一个提交读取 dev 版本、校验清单和 APK。校验失败时继续提供上一次成功发布的软件包。
+[Publish APK feed](.github/workflows/publish-feed.yml) 每 8 小时检查 [releases.json](releases.json) 中配置的发布来源。工作流核对 APK 清单、SHA-256 和包元数据。OpenClash 从上游同一个提交读取 dev 版本、校验清单和 APK。校验失败时继续提供上一次成功发布的软件包。
 
 可手动运行工作流立即检查，或启用 `force` 重新发布。GitHub 的定时任务可能延后，且公开仓库连续 60 天无活动时可能被停用。当前线上版本见[发布状态](https://aethersailor.github.io/openwrt-package-feed/release-state.json)。
 
