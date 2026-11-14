@@ -23,7 +23,7 @@ Vantage 的主题与仪表盘可分别安装。仅使用主题时，安装 `luci
 
 `luci-app-xgp-v3-screen` 面向西瓜皮 V3，通过 `spidev` 驱动板载 GC9307。软件包位于 `aarch64_generic` 索引中，对应源码快照可从软件源首页下载。
 
-`luci-app-fm350` 目前位于 `aarch64_cortex-a53` 索引中。上游使用 `v1.2.0` 标签对应的 Release 上传了 `1.2.0-r6`，该包的构建源码见 [上游提交](https://github.com/LianXia233/luci-app-fm350/tree/56389482f094411c784b9baaacc4aeb0658a6b2c)。
+`luci-app-fm350` 的 `aarch64_cortex-a53` 包同步自上游。`aarch64_generic` 包使用 ImmortalWrt 主线 SNAPSHOT 的 `rockchip/armv8` SDK 构建。构建记录提供对应的上游源码提交、SDK 校验值和 APK 校验值。
 
 使用私有 ASU 时，服务端可放行 `https://aethersailor.github.io/openwrt-package-feed/immortalwrt/apk/packages/`。路由器上的 `owut` 需要启用额外软件源传递。保留配置升级前，可用 `sysupgrade -l` 确认软件源配置与公钥都在备份列表中。
 
@@ -32,5 +32,7 @@ Vantage 的主题与仪表盘可分别安装。仅使用主题时，安装 `luci
 [Publish APK feed](.github/workflows/publish-feed.yml) 每 15 分钟检查 [releases.json](releases.json) 中配置的发布来源。工作流核对 APK 清单、SHA-256 和包元数据。OpenClash 从上游同一个提交读取 dev 版本、校验清单和 APK。校验失败时继续提供上一次成功发布的软件包。
 
 可手动运行工作流立即检查，或启用 `force` 重新发布。GitHub 的定时任务可能延后，且公开仓库连续 60 天无活动时可能被停用。当前线上版本见[发布状态](https://aethersailor.github.io/openwrt-package-feed/release-state.json)。
+
+[FM350 构建工作流](.github/workflows/build-fm350.yml) 每日检查上游稳定版。首次发布或上游 APK 的 SHA-256 变化时，工作流下载最新的 SNAPSHOT SDK 并编译。构建通过后，软件源从本仓库的 Release 同步产物。
 
 同一目录中的 `packages.adb`、`index.json` 和 APK 由同次发布生成。各软件包的许可证与对应源码可通过软件源首页查阅。
