@@ -21,6 +21,10 @@
       "checksums": "SHA256SUMS"
     },
     {
+      "repository": "eamonxg/luci-theme-aurora",
+      "package": "luci-theme-aurora"
+    },
+    {
       "repository": "vernesong/OpenClash",
       "package": "luci-app-openclash",
       "package_branch": "package",

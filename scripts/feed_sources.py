@@ -108,20 +108,26 @@ def resolve_release(source):
         raise ValueError(f"{repo} {tag} is not a stable release")
 
     assets = {asset["name"]: asset for asset in data["assets"] if asset["state"] == "uploaded"}
-    checksum_asset = assets.get(source["checksums"])
-    if not checksum_asset:
-        raise ValueError(f"{repo} {tag} is missing {source['checksums']}")
-
-    checksums = apk_checksums(verified_asset(checksum_asset, source))
-
     apk_assets = {name: asset for name, asset in assets.items() if name.endswith(".apk")}
-    if not checksums or apk_assets.keys() != checksums.keys():
-        missing = sorted(checksums.keys() - apk_assets.keys())
-        unlisted = sorted(apk_assets.keys() - checksums.keys())
-        raise ValueError(f"{repo} {tag} has an incomplete APK set: missing {missing}, unlisted {unlisted}")
+    if not apk_assets:
+        raise ValueError(f"{repo} {tag} has no APK assets")
+    checksums = {name: asset.get("digest") for name, asset in apk_assets.items()}
     for name, digest in checksums.items():
-        if apk_assets[name].get("digest") != digest:
-            raise ValueError(f"{repo} {tag} checksum differs from GitHub for {name}")
+        if not re.fullmatch(r"sha256:[a-f0-9]{64}", digest or ""):
+            raise ValueError(f"{repo} {tag} has no valid GitHub SHA-256 for {name}")
+
+    if "checksums" in source:
+        checksum_asset = assets.get(source["checksums"])
+        if not checksum_asset:
+            raise ValueError(f"{repo} {tag} is missing {source['checksums']}")
+        manifest = apk_checksums(verified_asset(checksum_asset, source))
+        if apk_assets.keys() != manifest.keys():
+            missing = sorted(manifest.keys() - apk_assets.keys())
+            unlisted = sorted(apk_assets.keys() - manifest.keys())
+            raise ValueError(f"{repo} {tag} has an incomplete APK set: missing {missing}, unlisted {unlisted}")
+        for name, digest in manifest.items():
+            if checksums[name] != digest:
+                raise ValueError(f"{repo} {tag} checksum differs from GitHub for {name}")
 
     package_field = "packages" if "packages" in source else "package"
     release = {"repository": repo, package_field: source[package_field], "tag": tag, "assets": checksums}
