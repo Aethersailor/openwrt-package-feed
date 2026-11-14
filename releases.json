@@ -32,6 +32,12 @@
       "package": "luci-app-xgp-v3-screen",
       "checksums": "SHA256SUMS",
       "read_token_env": "XGP_RELEASE_READ_TOKEN"
+    },
+    {
+      "repository": "LianXia233/luci-app-fm350",
+      "package": "luci-app-fm350",
+      "checksums": "SHA256SUMS",
+      "versioned_releases": true
     }
   ]
 }

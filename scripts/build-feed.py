@@ -94,6 +94,10 @@ def resolve_branch_package(source, api, headers):
     return release, [asset]
 
 
+def is_stable_release(release):
+    return not release["draft"] and not release["prerelease"] and VERSION_TAG.fullmatch(release["tag_name"]) is not None
+
+
 def resolve_release(source):
     repo = source["repository"]
     api = f"https://api.github.com/repos/{repo}"
@@ -108,8 +112,12 @@ def resolve_release(source):
         return resolve_branch_package(source, api, headers)
 
     data = json.loads(download(f"{api}/releases/latest", headers))
+    if source.get("versioned_releases") and not is_stable_release(data):
+        # Some upstreams also publish firmware under non-version tags.
+        candidates = json.loads(download(f"{api}/releases?per_page=100", headers))
+        data = next((item for item in candidates if is_stable_release(item)), data)
     tag = data["tag_name"]
-    if data["draft"] or data["prerelease"] or not VERSION_TAG.fullmatch(tag):
+    if not is_stable_release(data):
         raise ValueError(f"{repo} {tag} is not a stable release")
 
     assets = {asset["name"]: asset for asset in data["assets"] if asset["state"] == "uploaded"}

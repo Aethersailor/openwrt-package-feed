@@ -9,6 +9,7 @@ Aethersailor 自行维护的公开软件源。软件源同步下列项目发布�
 | [Vantage](https://github.com/anothaDev/luci-theme-vantage/releases) | `luci-theme-vantage`、`luci-app-vantage`、`luci-i18n-vantage-theme-zh-cn`、`luci-i18n-vantage-zh-cn` | 自动同步 |
 | OpenClash | `luci-app-openclash` | [官方 dev APK](https://github.com/vernesong/OpenClash/tree/package/dev) |
 | 西瓜皮 V3 状态屏 | `luci-app-xgp-v3-screen` | 自动同步 |
+| [FM350-GL 模组管理](https://github.com/LianXia233/luci-app-fm350/releases) | `luci-app-fm350` | 自动同步 |
 
 ## 使用软件源
 
@@ -21,6 +22,8 @@ Aethersailor 自行维护的公开软件源。软件源同步下列项目发布�
 Vantage 的主题与仪表盘可分别安装。仅使用主题时，安装 `luci-theme-vantage`，简体中文包为 `luci-i18n-vantage-theme-zh-cn`。Vantage 的 APK 由上游面向 OpenWrt 25.12 构建，实际安装由设备的软件包管理器检查依赖。
 
 `luci-app-xgp-v3-screen` 面向西瓜皮 V3，通过 `spidev` 驱动板载 GC9307。软件包位于 `aarch64_generic` 索引中，对应源码快照可从软件源首页下载。
+
+`luci-app-fm350` 目前位于 `aarch64_cortex-a53` 索引中。上游使用 `v1.2.0` 标签对应的 Release 上传了 `1.2.0-r6`，该包的构建源码见 [上游提交](https://github.com/LianXia233/luci-app-fm350/tree/56389482f094411c784b9baaacc4aeb0658a6b2c)。
 
 使用私有 ASU 时，服务端可放行 `https://aethersailor.github.io/openwrt-package-feed/immortalwrt/apk/packages/`。路由器上的 `owut` 需要启用额外软件源传递。保留配置升级前，可用 `sysupgrade -l` 确认软件源配置与公钥都在备份列表中。
 
