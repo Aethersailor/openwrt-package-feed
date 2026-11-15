@@ -224,6 +224,13 @@ DNS 转发服务及其 LuCI 管理界面。同步上游 OpenWrt 25.12 正式发�
 
 </details>
 
+<details>
+<summary>Wi-Fi Calling Gateway · <code>luci-app-wificalling-gateway</code></summary>
+
+按设备配置 Wi-Fi Calling 转发，并查看 ePDG 和 IPsec 连接信息。[上游仓库](https://github.com/smthdagg/luci-app-wificalling-gateway)
+
+</details>
+
 ## 常见问题
 
 | 现象 | 检查方法 |

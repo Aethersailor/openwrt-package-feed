@@ -99,6 +99,10 @@
       "repository": "YusDyr/luci-app-trafficctl",
       "packages": ["luci-app-trafficctl", "trafficctl", "luci-i18n-trafficctl-zh-cn"],
       "apk_asset_pattern": "(?P<name>luci-app-trafficctl|trafficctl|luci-i18n-trafficctl-zh-cn)_[0-9][0-9A-Za-z.+~-]*_noarch\\.apk"
+    },
+    {
+      "repository": "smthdagg/luci-app-wificalling-gateway",
+      "package": "luci-app-wificalling-gateway"
     }
   ]
 }
