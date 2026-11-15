@@ -94,6 +94,11 @@
       "repository": "timsaya/luci-app-bandix",
       "packages": ["luci-app-bandix", "luci-i18n-bandix-zh-cn"],
       "apk_asset_pattern": "(?P<name>luci-app-bandix|luci-i18n-bandix-zh-cn)-[0-9][0-9A-Za-z.+~-]*_all\\.apk"
+    },
+    {
+      "repository": "YusDyr/luci-app-trafficctl",
+      "packages": ["luci-app-trafficctl", "trafficctl", "luci-i18n-trafficctl-zh-cn"],
+      "apk_asset_pattern": "(?P<name>luci-app-trafficctl|trafficctl|luci-i18n-trafficctl-zh-cn)_[0-9][0-9A-Za-z.+~-]*_noarch\\.apk"
     }
   ]
 }

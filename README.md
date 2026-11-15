@@ -217,6 +217,13 @@ DNS 转发服务及其 LuCI 管理界面。同步上游 OpenWrt 25.12 正式发�
 
 </details>
 
+<details>
+<summary>Traffic Control · <code>luci-app-trafficctl</code></summary>
+
+按设备查看流量，设置限速、流量整形和联网规则。同步 LuCI 界面、服务 `trafficctl` 和简体中文包。[上游仓库](https://github.com/YusDyr/luci-app-trafficctl)
+
+</details>
+
 ## 常见问题
 
 | 现象 | 检查方法 |
