@@ -34,7 +34,7 @@ done < <(jq -r '.sources | to_entries[] | [.key, .value.repository, .value.commi
 version=$(jq -er .version <<< "$plan")
 sed -i "/^include .*luci\.mk/i PKG_VERSION:=$version\nPKG_RELEASE:=1\nPKG_PO_VERSION:=$version-r1" package/luci-app-bluetooth/Makefile
 
-./scripts/feeds update packages luci
+./scripts/feeds update -a
 ./scripts/feeds install luci-base bluez-daemon tcl coreutils-stty alsa-lib fdk-aac sbc libmpg123
 target_board=${target_name%/*}
 target_subtarget=${target_name#*/}
