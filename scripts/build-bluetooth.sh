@@ -91,6 +91,10 @@ for package in "${packages[@]}"; do
 done
 test -f "$output/$arch--luci-app-bluetooth-$version-r1.apk"
 
+kmods=$(awk '$2 ~ /^\*kmods\/[^/]+\/kmod-bluetooth-[0-9].*\.apk$/ {
+    split(substr($2, 2), path, "/"); print path[1] "/" path[2]; exit
+}' "$work/sha256sums")
+test -n "$kmods"
 docker run --rm -v "$output:/packages:ro" "$apk_image" sh -ec '
     arch=$1
     shift
@@ -98,6 +102,7 @@ docker run --rm -v "$output:/packages:ro" "$apk_image" sh -ec '
     apk add --no-cache --simulate --root /tmp --arch "$arch" "$@"
 ' bluetooth "$arch" --allow-untrusted --repositories-file /dev/null \
     --repository "$target/packages/packages.adb" \
+    --repository "$target/$kmods/packages.adb" \
     --repository "$base/packages/$arch/base/packages.adb" \
     --repository "$base/packages/$arch/luci/packages.adb" \
     --repository "$base/packages/$arch/packages/packages.adb" \
