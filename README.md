@@ -273,6 +273,13 @@ DNS 转发服务及其 LuCI 管理界面。同步上游 OpenWrt 25.12 正式发�
 
 </details>
 
+<details>
+<summary>SWFence · <code>luci-app-swfence</code></summary>
+
+为 Nintendo Switch 和 Switch 2 配置局域网访问、互联网隔离和访问例外。同步防火墙服务 `swfence` 和 LuCI 界面。[上游仓库](https://github.com/byizmysh/SWFence)
+
+</details>
+
 ## 常见问题
 
 | 现象 | 检查方法 |
