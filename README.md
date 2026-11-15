@@ -175,6 +175,27 @@ LuCI 主题与仪表盘可分别安装。主题和仪表盘的简体中文包分
 
 </details>
 
+<details>
+<summary>Hiveton H5000M 风扇控制 · <code>luci-app-h5000m-fancontrol</code></summary>
+
+在 LuCI 中查看温度并设置风扇曲线。同步上游 OpenWrt 25.12 APK 和简体中文包，适用于提供 `pwm-fan` 控制节点的 H5000M。固件保留设备树中的主动散热映射时，内核仍会参与调速。[上游仓库](https://github.com/FAN789/luci-app-h5000m-fancontrol)
+
+</details>
+
+<details>
+<summary>AirPi AP3000M 风扇控制 · <code>luci-app-airpi-fancontrol</code></summary>
+
+在 LuCI 中设置 AP3000M 的风扇曲线。同步上游 OpenWrt 25.12 应用 APK。搭载 8 GB eMMC 的型号使用硬件 PWM，搭载 16 GB eMMC 的型号需要与固件内核匹配的 `kmod-airpi-gpio-fan`，请按上游说明确认驱动。[上游仓库](https://github.com/LianXia233/luci-app-airpi3000m-fancontrol)
+
+</details>
+
+<details>
+<summary>鼎桥 MT5700M 模组管理 · <code>luci-app-mt5700m</code></summary>
+
+在 LuCI 中管理 MT5700M 5G 模组的拨号、频段和短信。同步上游 OpenWrt 25.12 发布归档中的应用、简体中文包和 `mt5700m-transport`。三个包位于 `aarch64_cortex-a53` 索引。[上游仓库](https://github.com/FAN789/luci-app-mt5700m)
+
+</details>
+
 ## 常见问题
 
 | 现象 | 检查方法 |

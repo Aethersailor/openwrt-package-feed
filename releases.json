@@ -51,6 +51,27 @@
     {
       "repository": "Kodo-kakaku/luci-app-gpoint",
       "package": "luci-app-gpoint"
+    },
+    {
+      "repository": "FAN789/luci-app-h5000m-fancontrol",
+      "packages": ["luci-app-h5000m-fancontrol", "luci-i18n-h5000m-fancontrol-zh-cn"],
+      "checksums": "SHA256SUMS",
+      "apk_asset_pattern": "(?P<name>luci-app-h5000m-fancontrol|luci-i18n-h5000m-fancontrol-zh-cn)-(?P<version>[0-9][0-9.r-]*)\\.apk",
+      "apk_arch": "aarch64_cortex-a53"
+    },
+    {
+      "repository": "LianXia233/luci-app-airpi3000m-fancontrol",
+      "package": "luci-app-airpi-fancontrol",
+      "release_tag_pattern": "v[0-9]{14}",
+      "apk_asset_pattern": "(?P<name>luci-app-airpi-fancontrol)-(?P<version>[0-9][0-9.r-]*)_openwrt-25\\.12\\.apk",
+      "apk_arch": "aarch64_cortex-a53"
+    },
+    {
+      "repository": "FAN789/luci-app-mt5700m",
+      "packages": ["luci-app-mt5700m", "luci-i18n-mt5700m-zh-cn", "mt5700m-transport"],
+      "apk_archive_pattern": "mt5700m-v[0-9.]+-openwrt-25\\.12\\.[0-9]+-mediatek-filogic\\.tar\\.gz",
+      "apk_asset_pattern": "(?P<name>luci-app-mt5700m|luci-i18n-mt5700m-zh-cn|mt5700m-transport)-(?P<version>[0-9][0-9.r-]*)\\.apk",
+      "apk_arch": "aarch64_cortex-a53"
     }
   ]
 }

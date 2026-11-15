@@ -67,6 +67,11 @@ def stage_package(site, release, asset, source, raw):
         if target_arch not in release["build_architectures"] or asset_filename != filename or arch not in ("noarch", target_arch):
             raise ValueError(f"Unexpected build identity in {asset['name']}: {name} {version} {arch}")
         arch = target_arch
+    elif identity := asset.get("apk_identity"):
+        target_arch = source.get("apk_arch", arch)
+        if (name, version) != (identity["name"], identity["version"]) or arch not in ("noarch", target_arch):
+            raise ValueError(f"Unexpected release asset identity in {asset['name']}: {name} {version} {arch}")
+        arch = target_arch
     else:
         tag_version = VERSION_TAG.fullmatch(release["tag"])[1]
         version_pattern = re.escape(tag_version)

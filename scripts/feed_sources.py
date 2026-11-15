@@ -1,9 +1,12 @@
 """Resolve and verify the APKs from configured release sources."""
 
 import hashlib
+import io
 import json
 import os
+from pathlib import PurePosixPath
 import re
+import tarfile
 import time
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
@@ -37,7 +40,9 @@ def github_json(repository, path):
 
 
 def verified_asset(asset, source):
-    if token_env := source.get("read_token_env"):
+    if "payload" in asset:
+        payload = asset["payload"]
+    elif token_env := source.get("read_token_env"):
         payload = download(
             f"https://api.github.com/repos/{source['repository']}/releases/assets/{asset['id']}",
             {"Accept": "application/octet-stream", "Authorization": f"Bearer {os.environ[token_env]}"},
@@ -88,8 +93,8 @@ def resolve_branch_package(source, api, headers):
     return release, [asset]
 
 
-def is_stable_release(release):
-    return not release["draft"] and not release["prerelease"] and VERSION_TAG.fullmatch(release["tag_name"]) is not None
+def is_stable_release(release, tag_pattern):
+    return not release["draft"] and not release["prerelease"] and re.fullmatch(tag_pattern, release["tag_name"]) is not None
 
 
 def resolve_release(source):
@@ -105,13 +110,14 @@ def resolve_release(source):
     if "package_branch" in source:
         return resolve_branch_package(source, api, headers)
 
+    tag_pattern = source.get("release_tag_pattern", VERSION_TAG)
     data = json.loads(download(f"{api}/releases/latest", headers))
-    if source.get("versioned_releases") and not is_stable_release(data):
+    if source.get("versioned_releases") and not is_stable_release(data, tag_pattern):
         # Some upstreams also publish firmware under non-version tags.
         candidates = json.loads(download(f"{api}/releases?per_page=100", headers))
-        data = next((item for item in candidates if is_stable_release(item)), data)
+        data = next((item for item in candidates if is_stable_release(item, tag_pattern)), data)
     tag = data["tag_name"]
-    if not is_stable_release(data):
+    if not is_stable_release(data, tag_pattern):
         raise ValueError(f"{repo} {tag} is not a stable release")
 
     checksums, apk_assets = release_apks(source, data)
@@ -124,10 +130,34 @@ def resolve_release(source):
     return release, apk_assets
 
 
+def bundled_apks(source, assets):
+    pattern = source["apk_archive_pattern"]
+    bundles = [asset for name, asset in assets.items() if re.fullmatch(pattern, name)]
+    if len(bundles) != 1:
+        raise ValueError(f"{source['repository']} expected one APK archive, found {len(bundles)}")
+
+    apks = {}
+    payload = verified_asset(bundles[0], source)
+    with tarfile.open(fileobj=io.BytesIO(payload), mode="r:gz") as bundle:
+        for member in bundle:
+            name = PurePosixPath(member.name).name
+            if not member.isfile() or not name.endswith(".apk"):
+                continue
+            if name in apks:
+                raise ValueError(f"Duplicate APK in {bundles[0]['name']}: {name}")
+            with bundle.extractfile(member) as file:
+                package = file.read()
+            apks[name] = {"name": name, "digest": "sha256:" + hashlib.sha256(package).hexdigest(), "payload": package}
+    return apks
+
+
 def release_apks(source, data):
     repo, tag = source["repository"], data["tag_name"]
     assets = {asset["name"]: asset for asset in data["assets"] if asset["state"] == "uploaded"}
-    apk_assets = {name: asset for name, asset in assets.items() if name.endswith(".apk")}
+    if "apk_archive_pattern" in source:
+        apk_assets = bundled_apks(source, assets)
+    else:
+        apk_assets = {name: asset for name, asset in assets.items() if name.endswith(".apk")}
     if not apk_assets:
         raise ValueError(f"{repo} {tag} has no APK assets")
     checksums = {name: asset.get("digest") for name, asset in apk_assets.items()}
@@ -147,5 +177,14 @@ def release_apks(source, data):
         for name, digest in manifest.items():
             if checksums[name] != digest:
                 raise ValueError(f"{repo} {tag} checksum differs from GitHub for {name}")
+
+    if pattern := source.get("apk_asset_pattern"):
+        selected = [
+            {**asset, "apk_identity": match.groupdict()}
+            for name, asset in apk_assets.items() if (match := re.fullmatch(pattern, name))
+        ]
+        if not selected:
+            raise ValueError(f"{repo} {tag} has no APK assets matching {pattern}")
+        return {asset["name"]: asset["digest"] for asset in selected}, selected
 
     return checksums, list(apk_assets.values())
