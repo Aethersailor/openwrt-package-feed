@@ -113,6 +113,13 @@
       "repository": "LianXia233/luci-app-netmonitor",
       "packages": ["luci-app-netmonitor", "luci-i18n-netmonitor-zh-cn"],
       "apk_asset_pattern": "(?P<name>luci-app-netmonitor|luci-i18n-netmonitor-zh-cn)-[0-9][0-9A-Za-z.+~-]*\\.apk"
+    },
+    {
+      "repository": "FAN789/luci-app-h5000m-netmode",
+      "packages": ["luci-app-h5000m-netmode", "luci-i18n-h5000m-netmode-zh-cn"],
+      "checksums": "SHA256SUMS",
+      "apk_asset_pattern": "(?P<name>luci-app-h5000m-netmode|luci-i18n-h5000m-netmode-zh-cn)-(?P<version>[0-9][0-9A-Za-z.+~-]*)\\.apk",
+      "apk_arch": "aarch64_cortex-a53"
     }
   ]
 }

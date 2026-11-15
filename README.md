@@ -245,6 +245,13 @@ DNS 转发服务及其 LuCI 管理界面。同步上游 OpenWrt 25.12 正式发�
 
 </details>
 
+<details>
+<summary>Hiveton H5000M 网络模式 · <code>luci-app-h5000m-netmode</code></summary>
+
+在 Hiveton H5000M 上切换有线 WAN 与 5G 的出口优先级。主包和简体中文包位于 `aarch64_cortex-a53` 索引。[上游仓库](https://github.com/FAN789/luci-app-h5000m-netmode)
+
+</details>
+
 ## 常见问题
 
 | 现象 | 检查方法 |
