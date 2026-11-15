@@ -60,9 +60,11 @@ for package in "${packages[@]}"; do
     fi
 done
 # LuCI's translation package is hidden from the SDK's defconfig.
+compile_log="$RUNNER_TEMP/bluetooth-compile.log"
 make package/luci-app-bluetooth/compile "CONFIG_PACKAGE_$translation=m" \
-    -j"$(nproc)" V=s > "$work/compile.log" 2>&1 || {
-    tail -n 100 "$work/compile.log"
+    -j"$(nproc)" V=s > "$compile_log" 2>&1 || {
+    grep -E '^make(\[[0-9]+\])?: \*\*\*|: (fatal )?error: |^configure: error|^ERROR:|No more mirrors|Hash mismatch' "$compile_log" | tail -n 40 || true
+    tail -n 20 "$compile_log"
     exit 1
 }
 
