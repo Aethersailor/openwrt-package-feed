@@ -134,6 +134,13 @@ LuCI Attended Sysupgrade 和 `owut` 共用 `attendedsysupgrade.server.url`。Ope
 </details>
 
 <details>
+<summary>7Dollar · <code>luci-theme-7dollar</code></summary>
+
+提供卡片式首页、分组菜单和深浅色模式的 LuCI 主题。同步上游为 OpenWrt 25.12 发布的通用 APK。[上游仓库](https://github.com/itsmaiGe/luci-theme-7dollar)
+
+</details>
+
+<details>
 <summary>Argon · <code>luci-theme-argon</code></summary>
 
 支持深色和浅色模式、登录背景和外观设置的 LuCI 主题。同步上游的通用 APK 和简体中文包 `luci-i18n-argon-config-zh-cn`。已安装旧版独立配置插件时，请按上游说明先单独安装与目标主题同次发布的 `luci-app-argon-config` 兼容包，再升级主题。[上游安装说明](https://github.com/jerrykuku/luci-theme-argon/blob/master/README_ZH.md#安装)

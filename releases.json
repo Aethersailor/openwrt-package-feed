@@ -25,6 +25,10 @@
       "package": "luci-theme-aurora"
     },
     {
+      "repository": "itsmaiGe/luci-theme-7dollar",
+      "package": "luci-theme-7dollar"
+    },
+    {
       "repository": "vernesong/OpenClash",
       "package": "luci-app-openclash",
       "package_branch": "package",
