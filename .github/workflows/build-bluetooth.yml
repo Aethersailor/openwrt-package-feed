@@ -56,10 +56,10 @@ jobs:
             libncurses-dev libssl-dev python3-setuptools rsync unzip zlib1g-dev zstd
       - name: Build and simulate installing the package set
         env:
-          PLAN: ${{ needs.check.outputs.plan }}
-          ARCH: ${{ matrix.arch }}
-          TARGET: ${{ matrix.target }}
-        run: bash scripts/build-bluetooth.sh "$PLAN" "$ARCH" "$TARGET" "$RUNNER_TEMP/bluetooth-dist"
+          BLUETOOTH_PLAN: ${{ needs.check.outputs.plan }}
+          BLUETOOTH_ARCH: ${{ matrix.arch }}
+          BLUETOOTH_TARGET: ${{ matrix.target }}
+        run: bash scripts/build-bluetooth.sh "$BLUETOOTH_PLAN" "$BLUETOOTH_ARCH" "$BLUETOOTH_TARGET" "$RUNNER_TEMP/bluetooth-dist"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
         with:
