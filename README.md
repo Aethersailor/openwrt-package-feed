@@ -252,6 +252,13 @@ DNS 转发服务及其 LuCI 管理界面。同步上游 OpenWrt 25.12 正式发�
 
 </details>
 
+<details>
+<summary>Easy Setup · <code>luci-app-easy-setup</code></summary>
+
+在 LuCI 的同一页面配置 WAN、无线网络和访客网络。[上游仓库](https://github.com/OppsError404/luci-app-easy-setup)
+
+</details>
+
 ## 常见问题
 
 | 现象 | 检查方法 |
