@@ -8,32 +8,13 @@
 
 ## 通过 SSH 添加软件源
 
-使用 `root` 登录路由器。下面的命令读取设备的 APK 架构，检测对应索引，校验并安装签名公钥，然后把软件源追加到 `customfeeds.list`。重复执行时会复用文件中已有的同一条源地址。
+首次添加时，用 `root` 登录路由器后执行。以后刷新索引只需运行 `apk update`。
 
 ```sh
-(
-  set -e
-  base='https://aethersailor.github.io/openwrt-package-feed'
-  arch="$(apk --print-arch)"
-  repo="$base/immortalwrt/apk/packages/$arch"
-  list='/etc/apk/repositories.d/customfeeds.list'
-  key_tmp="$(mktemp)"
-  trap 'rm -f "$key_tmp"' EXIT
-
-  wget -q -O /dev/null "$repo/index.json"
-  wget -O "$key_tmp" "$base/keys/aethersailor-feed.pem"
-  printf '%s  %s\n' '7f3c86c80ac9b37a41874c8739df14bae73a004b6725b64c3b257719e31cd184' "$key_tmp" |
-    sha256sum -c -
-
-  mkdir -p /etc/apk/keys /etc/apk/repositories.d
-  cp "$key_tmp" /etc/apk/keys/aethersailor-feed.pem
-  chmod 0644 /etc/apk/keys/aethersailor-feed.pem
-  touch "$list"
-  grep -Fqx "$repo/packages.adb" "$list" ||
-    printf '\n%s\n' "$repo/packages.adb" >> "$list"
-
+base='https://aethersailor.github.io/openwrt-package-feed'
+wget -O /etc/apk/keys/aethersailor-feed.pem "$base/keys/aethersailor-feed.pem" &&
+  echo "$base/immortalwrt/apk/packages/$(apk --print-arch)/packages.adb" >> /etc/apk/repositories.d/customfeeds.list &&
   apk update
-)
 ```
 
 以 Aurora 主题为例，查看可用版本和来源，然后安装。更新已安装的软件包时，可单独指定包名，例如 `apk upgrade luci-theme-aurora`。
@@ -185,10 +166,12 @@ LuCI 主题与仪表盘可分别安装。主题和仪表盘的简体中文包分
 | 现象 | 检查方法 |
 | --- | --- |
 | 添加时提示 404，或索引中找不到软件包 | 用 `apk --print-arch` 确认架构，在软件源首页查看该架构的版本索引。 |
-| `apk update` 提示索引签名不可信 | 重新执行添加命令，确认签名公钥的 SHA-256 校验成功。 |
+| `apk update` 提示索引签名不可信 | 检查 `/etc/apk/keys/aethersailor-feed.pem` 是否存在，再核对公钥摘要。 |
 | 安装时提示依赖缺失 | 检查官方软件源是否可用。内核模块需与当前固件的内核 ABI 一致。 |
 | `owut` 提示 `Repository not allowed` | 用 `owut blob` 查看请求中的源地址，确认 ASU 白名单允许该地址。 |
 | `owut` 报告不预期的缺包或降级 | 查看 `owut blob` 中的额外源和目标版本。部分版本的 `owut` 会读取 `/etc/apk/repositories.d/` 中的备份文件。确认属于备份的文件后，可移出该目录再检查。 |
+
+公钥校验可用 `sha256sum /etc/apk/keys/aethersailor-feed.pem`。预期 SHA-256 为 `7f3c86c80ac9b37a41874c8739df14bae73a004b6725b64c3b257719e31cd184`。
 
 停用本源时，从 `/etc/apk/repositories.d/customfeeds.list` 删除本源的 URL，再运行 `apk update`。
 
