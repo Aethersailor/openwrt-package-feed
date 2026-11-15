@@ -210,6 +210,13 @@ DNS 转发服务及其 LuCI 管理界面。同步上游 OpenWrt 25.12 正式发�
 
 </details>
 
+<details>
+<summary>Bandix · <code>luci-app-bandix</code></summary>
+
+按设备或接口查看实时流量、连接和历史统计。同步核心服务 `bandix`、LuCI 界面和简体中文包。[核心服务](https://github.com/timsaya/openwrt-bandix) · [LuCI 界面](https://github.com/timsaya/luci-app-bandix)
+
+</details>
+
 ## 常见问题
 
 | 现象 | 检查方法 |
