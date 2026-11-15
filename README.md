@@ -196,6 +196,13 @@ LuCI 主题与仪表盘可分别安装。主题和仪表盘的简体中文包分
 
 </details>
 
+<details>
+<summary>MosDNS · <code>mosdns</code>、<code>luci-app-mosdns</code></summary>
+
+DNS 转发服务及其 LuCI 管理界面。同步上游 OpenWrt 25.12 正式发布的本体、LuCI、简体中文包 `luci-i18n-mosdns-zh-cn` 和依赖 `geo2txt`。`v2ray-geoip` 和 `v2ray-geosite` 由固件的官方源提供。[上游仓库](https://github.com/sbwml/luci-app-mosdns)
+
+</details>
+
 ## 常见问题
 
 | 现象 | 检查方法 |

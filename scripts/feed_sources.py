@@ -132,22 +132,30 @@ def resolve_release(source):
 
 def bundled_apks(source, assets):
     pattern = source["apk_archive_pattern"]
-    bundles = [asset for name, asset in assets.items() if re.fullmatch(pattern, name)]
-    if len(bundles) != 1:
-        raise ValueError(f"{source['repository']} expected one APK archive, found {len(bundles)}")
-
     apks = {}
-    payload = verified_asset(bundles[0], source)
-    with tarfile.open(fileobj=io.BytesIO(payload), mode="r:gz") as bundle:
-        for member in bundle:
-            name = PurePosixPath(member.name).name
-            if not member.isfile() or not name.endswith(".apk"):
-                continue
-            if name in apks:
-                raise ValueError(f"Duplicate APK in {bundles[0]['name']}: {name}")
-            with bundle.extractfile(member) as file:
-                package = file.read()
-            apks[name] = {"name": name, "digest": "sha256:" + hashlib.sha256(package).hexdigest(), "payload": package}
+    for arch in source.get("apk_archive_architectures", [None]):
+        archive_pattern = pattern.replace("{arch}", re.escape(arch)) if arch else pattern
+        bundles = [asset for name, asset in assets.items() if re.fullmatch(archive_pattern, name)]
+        if len(bundles) != 1:
+            raise ValueError(f"{source['repository']} expected one APK archive matching {archive_pattern}, found {len(bundles)}")
+
+        payload = verified_asset(bundles[0], source)
+        with tarfile.open(fileobj=io.BytesIO(payload), mode="r:gz") as bundle:
+            for member in bundle:
+                name = PurePosixPath(member.name).name
+                if not member.isfile() or not name.endswith(".apk"):
+                    continue
+                key = f"{arch}/{name}" if arch else name
+                if key in apks:
+                    raise ValueError(f"Duplicate APK in {bundles[0]['name']}: {name}")
+                with bundle.extractfile(member) as file:
+                    package = file.read()
+                apks[key] = {
+                    "name": name,
+                    "digest": "sha256:" + hashlib.sha256(package).hexdigest(),
+                    "payload": package,
+                    "apk_arch": arch,
+                }
     return apks
 
 
@@ -179,12 +187,16 @@ def release_apks(source, data):
                 raise ValueError(f"{repo} {tag} checksum differs from GitHub for {name}")
 
     if pattern := source.get("apk_asset_pattern"):
-        selected = [
-            {**asset, "apk_identity": match.groupdict()}
-            for name, asset in apk_assets.items() if (match := re.fullmatch(pattern, name))
-        ]
+        selected = {
+            key: {**asset, "apk_identity": match.groupdict()}
+            for key, asset in apk_assets.items() if (match := re.fullmatch(pattern, asset["name"]))
+        }
         if not selected:
             raise ValueError(f"{repo} {tag} has no APK assets matching {pattern}")
-        return {asset["name"]: asset["digest"] for asset in selected}, selected
+        for arch in source.get("apk_archive_architectures", []):
+            names = {asset["apk_identity"]["name"] for asset in selected.values() if asset["apk_arch"] == arch}
+            if missing := set(source["packages"]) - names:
+                raise ValueError(f"{repo} {tag} is missing APKs for {arch}: {sorted(missing)}")
+        return {key: asset["digest"] for key, asset in selected.items()}, list(selected.values())
 
     return checksums, list(apk_assets.values())

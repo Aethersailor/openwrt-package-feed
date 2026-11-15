@@ -72,6 +72,13 @@
       "apk_archive_pattern": "mt5700m-v[0-9.]+-openwrt-25\\.12\\.[0-9]+-mediatek-filogic\\.tar\\.gz",
       "apk_asset_pattern": "(?P<name>luci-app-mt5700m|luci-i18n-mt5700m-zh-cn|mt5700m-transport)-(?P<version>[0-9][0-9.r-]*)\\.apk",
       "apk_arch": "aarch64_cortex-a53"
+    },
+    {
+      "repository": "sbwml/luci-app-mosdns",
+      "packages": ["mosdns", "luci-app-mosdns", "luci-i18n-mosdns-zh-cn", "geo2txt"],
+      "apk_archive_pattern": "{arch}-openwrt-25\\.12\\.tar\\.gz",
+      "apk_archive_architectures": ["aarch64_cortex-a53", "aarch64_cortex-a76", "aarch64_generic", "x86_64"],
+      "apk_asset_pattern": "(?P<name>mosdns|luci-app-mosdns|luci-i18n-mosdns-zh-cn|geo2txt)-(?P<version>[0-9][0-9A-Za-z_.+~-]*)\\.apk"
     }
   ]
 }

@@ -68,7 +68,7 @@ def stage_package(site, release, asset, source, raw):
             raise ValueError(f"Unexpected build identity in {asset['name']}: {name} {version} {arch}")
         arch = target_arch
     elif identity := asset.get("apk_identity"):
-        target_arch = source.get("apk_arch", arch)
+        target_arch = asset.get("apk_arch") or source.get("apk_arch", arch)
         if (name, version) != (identity["name"], identity["version"]) or arch not in ("noarch", target_arch):
             raise ValueError(f"Unexpected release asset identity in {asset['name']}: {name} {version} {arch}")
         arch = target_arch
