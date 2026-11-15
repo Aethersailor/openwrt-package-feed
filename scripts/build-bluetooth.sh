@@ -30,9 +30,13 @@ while IFS=$'\t' read -r package repository commit; do
         tar -xz --strip-components=1 -C "package/$package"
 done < <(jq -r '.sources | to_entries[] | [.key, .value.repository, .value.commit] | @tsv' <<< "$plan")
 
+patch_path=$(jq -er .patch.path <<< "$plan")
+patch --batch --fuzz=0 --strip=1 --directory=package/luci-app-bluetooth < "$GITHUB_WORKSPACE/$patch_path"
+
 # Upstream tracks a branch without tags. Use a version that tracks the app commit.
 version=$(jq -er .version <<< "$plan")
-sed -i "/^include .*luci\.mk/i PKG_VERSION:=$version\nPKG_RELEASE:=1\nPKG_PO_VERSION:=$version-r1" package/luci-app-bluetooth/Makefile
+release=$(jq -er .release <<< "$plan")
+sed -i "/^include .*luci\.mk/i PKG_VERSION:=$version\nPKG_RELEASE:=$release\nPKG_PO_VERSION:=$version-r$release" package/luci-app-bluetooth/Makefile
 
 # The SDK installs the target Tcl configuration and headers into staging.
 sed -i '/^\$(eval .*BuildPackage,expect))/i CONFIGURE_ARGS += --with-tcl=$(STAGING_DIR)/usr/lib --with-tclinclude=$(STAGING_DIR)/usr/include' package/expect/Makefile
@@ -40,7 +44,7 @@ sed -i '/^\$(eval .*BuildPackage,expect))/i CONFIGURE_ARGS += --with-tcl=$(STAGI
 ./scripts/feeds update -a
 # Expect also reads private headers from the Tcl source tree via tclConfig.sh.
 sed -i '/^include .*host-build\.mk/i CONFIG_AUTOREMOVE:=' feeds/packages/lang/tcl/Makefile
-./scripts/feeds install luci-base bluez-daemon tcl coreutils-stty alsa-lib fdk-aac sbc libmpg123
+./scripts/feeds install luci-base bluez-daemon tcl coreutils-stty coreutils-timeout dbus-utils alsa-lib fdk-aac sbc libmpg123
 target_board=${target_name%/*}
 target_subtarget=${target_name#*/}
 cat > .config <<EOF
@@ -89,7 +93,7 @@ for package in "${packages[@]}"; do
         and (.name + "-" + .version + ".apk") == $filename' <<< "$metadata"
     archives+=("/packages/$archive")
 done
-test -f "$output/$arch--luci-app-bluetooth-$version-r1.apk"
+test -f "$output/$arch--luci-app-bluetooth-$version-r$release.apk"
 
 kmods=$(awk '$2 ~ /^\*kmods\/[^/]+\/kmod-bluetooth-[0-9].*\.apk$/ {
     split(substr($2, 2), path, "/"); print path[1] "/" path[2]; exit

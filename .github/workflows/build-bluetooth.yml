@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   check:
-    if: github.ref_name == github.event.repository.default_branch
+    if: github.ref_name == github.event.repository.default_branch || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     outputs:
       plan: ${{ steps.upstream.outputs.plan }}
@@ -89,14 +89,22 @@ jobs:
         working-directory: dist
         env:
           PLAN: ${{ needs.check.outputs.plan }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           GH_TOKEN: ${{ github.token }}
         run: |
           tag=$(jq -er .tag <<< "$PLAN")
-          version=$(jq -er .version <<< "$PLAN")
+          version=$(jq -er '"\(.version)-r\(.release)"' <<< "$PLAN")
+          options=()
+          if [[ "$GITHUB_REF_NAME" != "$DEFAULT_BRANCH" ]]; then
+            options+=(--draft)
+          fi
           jq . <<< "$PLAN" > build-info.json
           sha256sum -- *.apk > SHA256SUMS
           jq -r '.sources | to_entries[] | "- [\(.key)](https://github.com/\(.value.repository)/tree/\(.value.commit))"' \
             build-info.json > "$RUNNER_TEMP/bluetooth-notes.md"
-          gh release create "$tag" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --latest=false \
-            --title "LuCI Bluetooth $version-r1" --notes-file "$RUNNER_TEMP/bluetooth-notes.md" \
+          patch_path=$(jq -er .patch.path <<< "$PLAN")
+          printf '\n- [Feed patch](https://github.com/%s/blob/%s/%s)\n' \
+            "$GITHUB_REPOSITORY" "$GITHUB_SHA" "$patch_path" >> "$RUNNER_TEMP/bluetooth-notes.md"
+          gh release create "$tag" "${options[@]}" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --latest=false \
+            --title "LuCI Bluetooth $version" --notes-file "$RUNNER_TEMP/bluetooth-notes.md" \
             ./*.apk ./sdk-*.json build-info.json SHA256SUMS

@@ -2,6 +2,7 @@
 
 from hashlib import sha256
 import json
+from pathlib import Path
 import re
 
 from feed_sources import github_json, release_apks
@@ -9,6 +10,8 @@ from feed_sources import github_json, release_apks
 
 REPOSITORY = "Aethersailor/openwrt-package-feed"
 TAG_PREFIX = "bluetooth-"
+RELEASE = 2
+PATCH = "patches/luci-app-bluetooth.patch"
 SOURCES = {
     "luci-app-bluetooth": "sbwml/luci-app-bluetooth",
     "bluez-alsa": "sbwml/package_new_bluez-alsa",
@@ -61,7 +64,13 @@ def main():
         package: {"repository": repo, "commit": commits[package]["sha"]}
         for package, repo in SOURCES.items()
     }
-    digest = sha256(json.dumps(sources, sort_keys=True).encode()).hexdigest()
+    patch = Path(__file__).resolve().parents[1] / PATCH
+    build_inputs = {
+        "sources": sources,
+        "patch": {"path": PATCH, "sha256": sha256(patch.read_bytes()).hexdigest()},
+        "release": RELEASE,
+    }
+    digest = sha256(json.dumps(build_inputs, sort_keys=True).encode()).hexdigest()
     tag = TAG_PREFIX + digest[:16]
     if (build := latest_build()) and build["tag_name"] == tag:
         return
@@ -71,7 +80,7 @@ def main():
     print(json.dumps({
         "tag": tag,
         "version": f"0.{release_date}.{release_time}",
-        "sources": sources,
+        **build_inputs,
         "targets": [{"arch": arch, "target": target} for arch, target in TARGETS.items()],
         "packages": PACKAGES,
     }))
