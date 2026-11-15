@@ -42,6 +42,15 @@
       "package": "luci-app-fm350",
       "checksums": "SHA256SUMS",
       "versioned_releases": true
+    },
+    {
+      "repository": "ciwga/luci-app-argononev3-fancontrol",
+      "package": "luci-app-argononev3-fancontrol",
+      "checksums": "checksums.txt"
+    },
+    {
+      "repository": "Kodo-kakaku/luci-app-gpoint",
+      "package": "luci-app-gpoint"
     }
   ]
 }

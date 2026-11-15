@@ -10,7 +10,7 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 
-VERSION_TAG = re.compile(r"v\d+\.\d+(?:\.\d+(?:-r\d+)?|-r\d+)")
+VERSION_TAG = re.compile(r"v\.?(\d+\.\d+(?:\.\d+(?:-r\d+)?|-r\d+))")
 
 
 def download(url, headers=None):
@@ -69,10 +69,10 @@ def resolve_branch_package(source, api, headers):
     commit = json.loads(download(f"{api}/commits?{query}", headers))[0]["sha"]
     base_url = f"https://raw.githubusercontent.com/{repo}/{commit}/{directory}"
     tag = download(f"{base_url}/version").decode("utf-8").partition("\n")[0].strip()
-    if not VERSION_TAG.fullmatch(tag):
+    if not (version := VERSION_TAG.fullmatch(tag)):
         raise ValueError(f"{repo}/{directory} has an invalid version: {tag}")
 
-    name = f"{source['package']}-{tag[1:]}.apk"
+    name = f"{source['package']}-{version[1]}.apk"
     checksums = apk_checksums(download(f"{base_url}/{source['checksums']}"))
     if checksums.keys() != {name}:
         raise ValueError(f"{repo}/{directory} {tag} has an unexpected APK checksum list")

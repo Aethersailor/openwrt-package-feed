@@ -161,6 +161,20 @@ LuCI 主题与仪表盘可分别安装。主题和仪表盘的简体中文包分
 
 </details>
 
+<details>
+<summary>Argon ONE V3 风扇控制 · <code>luci-app-argononev3-fancontrol</code></summary>
+
+在 LuCI 中管理 Raspberry Pi 5 的 Argon ONE V3 外壳风扇。同步上游的 `aarch64_cortex-a76` APK，仅适用于配有该外壳的设备。安装前请按上游说明启用 I²C，并安装 `i2c-tools`。[上游仓库](https://github.com/ciwga/luci-app-argononev3-fancontrol)
+
+</details>
+
+<details>
+<summary>GPoint GNSS · <code>luci-app-gpoint</code></summary>
+
+在 LuCI 中查看 GNSS 定位信息。支持 u-blox VK-172 接收器、Quectel EC25 / RM520N 和 Sierra Wireless EM7455 等设备。同步上游发布的通用 APK，完整型号清单见[上游仓库](https://github.com/Kodo-kakaku/luci-app-gpoint)。
+
+</details>
+
 ## 常见问题
 
 | 现象 | 检查方法 |

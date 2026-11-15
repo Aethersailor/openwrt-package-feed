@@ -15,7 +15,7 @@ import tempfile
 from urllib.error import HTTPError
 
 from bluetooth import resolve_build as resolve_bluetooth_build
-from feed_sources import download, resolve_release, verified_asset
+from feed_sources import VERSION_TAG, download, resolve_release, verified_asset
 from fm350 import resolve_build as resolve_fm350_build
 
 
@@ -68,7 +68,7 @@ def stage_package(site, release, asset, source, raw):
             raise ValueError(f"Unexpected build identity in {asset['name']}: {name} {version} {arch}")
         arch = target_arch
     else:
-        tag_version = release["tag"][1:]
+        tag_version = VERSION_TAG.fullmatch(release["tag"])[1]
         version_pattern = re.escape(tag_version)
         if "-r" not in tag_version and "package_commit" not in release:
             version_pattern += r"-r\d+"
