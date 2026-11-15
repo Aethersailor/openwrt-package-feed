@@ -39,7 +39,7 @@ apk add owut luci-app-attendedsysupgrade luci-i18n-attendedsysupgrade-zh-cn
 
 ### 让 ASU 服务使用本源
 
-路由器上的 `apk update` 成功后，ASU 服务仍需允许 ImageBuilder 访问本源。截至 2026 年 11 月 15 日，OpenWrt 和 ImmortalWrt 的公共 ASU 均未放行本源。可通过各自的 API 查看实时的 `server.repository_allow_list`。[OpenWrt ASU](https://sysupgrade.openwrt.org/api/v1/overview) · [ImmortalWrt ASU](https://sysupgrade.immortalwrt.org/api/v1/overview)
+路由器上的 `apk update` 成功后，ASU 服务仍需允许 ImageBuilder 访问本源。可通过 ASU 的 API 查看当前的 `server.repository_allow_list`。[OpenWrt ASU](https://sysupgrade.openwrt.org/api/v1/overview) · [ImmortalWrt ASU](https://sysupgrade.immortalwrt.org/api/v1/overview)
 
 要在固件升级时保留本源中的插件，请部署自建 ASU，并在服务端 `asu.toml` 的 `repository_allow_list` 中加入下列 URL 前缀。保留白名单中的其他条目。保存后重启 ASU 服务和构建进程，使新配置生效。[ASU 部署说明](https://github.com/openwrt/asu) · [白名单实现](https://github.com/openwrt/asu/blob/de08b1dd64e4ed9ebc8413cd67e9459892708213/asu/repositories.py)
 
