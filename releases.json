@@ -108,6 +108,11 @@
       "repository": "lucas-albers-lz4/fwlive",
       "packages": ["luci-app-fwlive", "luci-i18n-fwlive-zh-cn"],
       "apk_asset_pattern": "(?P<name>luci-app-fwlive|luci-i18n-fwlive-zh-cn)-(?P<version>[0-9][0-9A-Za-z.+~-]*)\\.apk"
+    },
+    {
+      "repository": "LianXia233/luci-app-netmonitor",
+      "packages": ["luci-app-netmonitor", "luci-i18n-netmonitor-zh-cn"],
+      "apk_asset_pattern": "(?P<name>luci-app-netmonitor|luci-i18n-netmonitor-zh-cn)-[0-9][0-9A-Za-z.+~-]*\\.apk"
     }
   ]
 }

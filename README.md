@@ -238,6 +238,13 @@ DNS 转发服务及其 LuCI 管理界面。同步上游 OpenWrt 25.12 正式发�
 
 </details>
 
+<details>
+<summary>NetMonitor · <code>luci-app-netmonitor</code></summary>
+
+持续探测目标地址的网络延迟、丢包和连通性，并在 LuCI 中查看统计。同步主包和简体中文包。[上游仓库](https://github.com/LianXia233/luci-app-netmonitor)
+
+</details>
+
 ## 常见问题
 
 | 现象 | 检查方法 |
