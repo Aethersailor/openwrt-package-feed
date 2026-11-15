@@ -49,7 +49,13 @@ EOF
 mapfile -t packages < <(jq -er '.packages[]' <<< "$plan")
 for package in "${packages[@]}"; do printf 'CONFIG_PACKAGE_%s=m\n' "$package"; done >> .config
 make defconfig
-for package in "${packages[@]}"; do grep -Fx "CONFIG_PACKAGE_$package=m" .config; done
+for package in "${packages[@]}"; do
+    if ! grep -E "^CONFIG_PACKAGE_$package=[my]$" .config; then
+        echo "SDK did not select $package" >&2
+        grep -E '(^| )CONFIG_PACKAGE_(bluez|expect|luci-app-bluetooth|luci-i18n-bluetooth)' .config || true
+        exit 1
+    fi
+done
 make package/luci-app-bluetooth/compile -j"$(nproc)" V=s > "$work/compile.log" 2>&1 || {
     tail -n 100 "$work/compile.log"
     exit 1
