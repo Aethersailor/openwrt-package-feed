@@ -34,6 +34,9 @@ done < <(jq -r '.sources | to_entries[] | [.key, .value.repository, .value.commi
 version=$(jq -er .version <<< "$plan")
 sed -i "/^include .*luci\.mk/i PKG_VERSION:=$version\nPKG_RELEASE:=1\nPKG_PO_VERSION:=$version-r1" package/luci-app-bluetooth/Makefile
 
+# The SDK installs the target Tcl configuration and headers into staging.
+sed -i '/^\$(eval .*BuildPackage,expect))/i CONFIGURE_ARGS += --with-tcl=$(STAGING_DIR)/usr/lib --with-tclinclude=$(STAGING_DIR)/usr/include' package/expect/Makefile
+
 ./scripts/feeds update -a
 ./scripts/feeds install luci-base bluez-daemon tcl coreutils-stty alsa-lib fdk-aac sbc libmpg123
 target_board=${target_name%/*}
