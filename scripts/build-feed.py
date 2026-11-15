@@ -14,6 +14,7 @@ import subprocess
 import tempfile
 from urllib.error import HTTPError
 
+from bluetooth import resolve_build as resolve_bluetooth_build
 from feed_sources import download, resolve_release, verified_asset
 from fm350 import resolve_build as resolve_fm350_build
 
@@ -58,18 +59,26 @@ def stage_package(site, release, asset, source, raw):
     temporary = Path(staged.name)
     package = json.loads(apk(site, "adbdump", "--format", "json", f"/feed/.incoming/{temporary.name}"))["info"]
     name, version, arch = package["name"], package["version"], package["arch"]
-    tag_version = release["tag"][1:]
-    version_pattern = re.escape(tag_version)
-    if "-r" not in tag_version and "package_commit" not in release:
-        version_pattern += r"-r\d+"
-    if name not in package_names(release) or not re.fullmatch(version_pattern, version):
+    if name not in package_names(release):
         raise ValueError(f"Unexpected package identity in {asset['name']}: {name} {version}")
+    filename = f"{name}-{version}.apk"
+    if "build_architectures" in release:
+        target_arch, _, asset_filename = asset["name"].partition("--")
+        if target_arch not in release["build_architectures"] or asset_filename != filename or arch not in ("noarch", target_arch):
+            raise ValueError(f"Unexpected build identity in {asset['name']}: {name} {version} {arch}")
+        arch = target_arch
+    else:
+        tag_version = release["tag"][1:]
+        version_pattern = re.escape(tag_version)
+        if "-r" not in tag_version and "package_commit" not in release:
+            version_pattern += r"-r\d+"
+        if not re.fullmatch(version_pattern, version):
+            raise ValueError(f"Unexpected package version in {asset['name']}: {version}")
     if not re.fullmatch(r"[a-z0-9][a-z0-9_.-]+", arch) or release.get("architecture", arch) != arch:
         raise ValueError(f"Invalid architecture in {asset['name']}: {arch}")
 
     directory = site / "immortalwrt" / "apk" / "packages" / arch
     directory.mkdir(parents=True, exist_ok=True)
-    filename = f"{name}-{version}.apk"
     destination = directory / filename
     if destination.exists():
         raise ValueError(f"Duplicate package {name} for {arch}")
@@ -146,6 +155,9 @@ def write_site_home(site, releases, architectures):
         elif "package_commit" in item:
             url = f"https://github.com/{repo}/tree/{item['package_commit']}/{item['package_directory']}"
             label = f"{repo.split('/')[-1]} {item['package_directory']} {tag}"
+        elif "build_architectures" in item:
+            url = f"https://github.com/{repo}/releases/tag/{tag}"
+            label = item["packages"][0]
         else:
             url = f"https://github.com/{repo}/releases/tag/{tag}"
             label = f"{repo.split('/')[-1]} {tag}"
@@ -177,9 +189,10 @@ def main():
 
     sources = json.loads(CATALOG.read_text(encoding="utf-8"))["releases"]
     resolved = [resolve_release(source) for source in sources]
-    if fm350_build := resolve_fm350_build():
-        resolved.append(fm350_build)
-        sources.append({"repository": fm350_build[0]["repository"]})
+    for resolve_build in (resolve_fm350_build, resolve_bluetooth_build):
+        if build := resolve_build():
+            resolved.append(build)
+            sources.append({"repository": build[0]["repository"]})
     releases = [release for release, _ in resolved]
     state = {"releases": releases}
     if not args.force and state == published_state():

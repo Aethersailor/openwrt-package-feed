@@ -29,6 +29,13 @@ def download(url, headers=None):
             time.sleep(2 ** attempt)
 
 
+def github_json(repository, path):
+    headers = {"Accept": "application/vnd.github+json"}
+    if token := os.environ.get("GH_TOKEN"):
+        headers["Authorization"] = f"Bearer {token}"
+    return json.loads(download(f"https://api.github.com/repos/{repository}/{path}", headers))
+
+
 def verified_asset(asset, source):
     if token_env := source.get("read_token_env"):
         payload = download(
@@ -107,6 +114,18 @@ def resolve_release(source):
     if not is_stable_release(data):
         raise ValueError(f"{repo} {tag} is not a stable release")
 
+    checksums, apk_assets = release_apks(source, data)
+
+    package_field = "packages" if "packages" in source else "package"
+    release = {"repository": repo, package_field: source[package_field], "tag": tag, "assets": checksums}
+    if source.get("read_token_env"):
+        commit = json.loads(download(f"{api}/commits/{tag}", headers))
+        release["source_commit"] = commit["sha"]
+    return release, apk_assets
+
+
+def release_apks(source, data):
+    repo, tag = source["repository"], data["tag_name"]
     assets = {asset["name"]: asset for asset in data["assets"] if asset["state"] == "uploaded"}
     apk_assets = {name: asset for name, asset in assets.items() if name.endswith(".apk")}
     if not apk_assets:
@@ -129,9 +148,4 @@ def resolve_release(source):
             if checksums[name] != digest:
                 raise ValueError(f"{repo} {tag} checksum differs from GitHub for {name}")
 
-    package_field = "packages" if "packages" in source else "package"
-    release = {"repository": repo, package_field: source[package_field], "tag": tag, "assets": checksums}
-    if source.get("read_token_env"):
-        commit = json.loads(download(f"{api}/commits/{tag}", headers))
-        release["source_commit"] = commit["sha"]
-    return release, list(apk_assets.values())
+    return checksums, list(apk_assets.values())

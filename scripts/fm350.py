@@ -2,12 +2,11 @@
 
 import argparse
 import json
-import os
 from pathlib import Path
 import re
 from urllib.parse import urlencode
 
-from feed_sources import VERSION_TAG, download, resolve_release, verified_asset
+from feed_sources import VERSION_TAG, download, github_json, resolve_release, verified_asset
 
 
 UPSTREAM = "LianXia233/luci-app-fm350"
@@ -16,13 +15,6 @@ PACKAGE = "luci-app-fm350"
 ARCH = "aarch64_generic"
 TAG_PREFIX = "fm350-generic-"
 MANIFEST = "build-info.json"
-
-
-def github_json(repository, path):
-    headers = {"Accept": "application/vnd.github+json"}
-    if token := os.environ.get("GH_TOKEN"):
-        headers["Authorization"] = f"Bearer {token}"
-    return json.loads(download(f"https://api.github.com/repos/{repository}/{path}", headers))
 
 
 def latest_build():
