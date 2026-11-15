@@ -129,6 +129,12 @@
       "repository": "meow-rs/meow-rs",
       "packages": ["meow", "luci-app-meow"],
       "apk_asset_pattern": "(?P<name>meow|luci-app-meow)_(?P<version>[0-9][0-9A-Za-z.+~-]*)_(?:all|(?:aarch64_cortex-a53|aarch64_cortex-a76|aarch64_generic|x86_64))\\.apk"
+    },
+    {
+      "repository": "4IceG/luci-app-modemdata",
+      "packages": ["modemdata", "luci-app-modemdata", "luci-i18n-modemdata-zh-cn"],
+      "release_tag_pattern": "v?[0-9]+\\.[0-9]+\\.[0-9]+(?:-r[0-9]+)?",
+      "apk_asset_pattern": "(?P<name>modemdata|luci-app-modemdata|luci-i18n-modemdata-zh-cn)-(?P<version>[0-9][0-9A-Za-z.+~-]*)\\.apk"
     }
   ]
 }

@@ -266,6 +266,13 @@ DNS 转发服务及其 LuCI 管理界面。同步上游 OpenWrt 25.12 正式发�
 
 </details>
 
+<details>
+<summary>ModemData · <code>luci-app-modemdata</code></summary>
+
+在 LuCI 中查看 4G / 5G 模组的连接状态、小区和信号参数。同步 `modemdata`、LuCI 界面和简体中文包。[上游仓库](https://github.com/4IceG/luci-app-modemdata)
+
+</details>
+
 ## 常见问题
 
 | 现象 | 检查方法 |
