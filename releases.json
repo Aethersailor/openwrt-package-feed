@@ -124,6 +124,11 @@
     {
       "repository": "OppsError404/luci-app-easy-setup",
       "package": "luci-app-easy-setup"
+    },
+    {
+      "repository": "meow-rs/meow-rs",
+      "packages": ["meow", "luci-app-meow"],
+      "apk_asset_pattern": "(?P<name>meow|luci-app-meow)_(?P<version>[0-9][0-9A-Za-z.+~-]*)_(?:all|(?:aarch64_cortex-a53|aarch64_cortex-a76|aarch64_generic|x86_64))\\.apk"
     }
   ]
 }

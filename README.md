@@ -259,6 +259,13 @@ DNS 转发服务及其 LuCI 管理界面。同步上游 OpenWrt 25.12 正式发�
 
 </details>
 
+<details>
+<summary>Meow · <code>luci-app-meow</code></summary>
+
+兼容 Mihomo 配置的代理核心，提供 LuCI 配置、运行状态和日志页面。同步核心 `meow` 和 LuCI 界面。[上游仓库](https://github.com/meow-rs/meow-rs)
+
+</details>
+
 ## 常见问题
 
 | 现象 | 检查方法 |
