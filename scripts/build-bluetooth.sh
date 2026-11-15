@@ -41,22 +41,27 @@ target_subtarget=${target_name#*/}
 cat > .config <<EOF
 CONFIG_TARGET_$target_board=y
 CONFIG_TARGET_${target_board}_$target_subtarget=y
-CONFIG_LUCI_LANG_zh_Hans=m
 # CONFIG_ALL is not set
 # CONFIG_ALL_KMODS is not set
 # CONFIG_ALL_NONSHARED is not set
 EOF
 mapfile -t packages < <(jq -er '.packages[]' <<< "$plan")
-for package in "${packages[@]}"; do printf 'CONFIG_PACKAGE_%s=m\n' "$package"; done >> .config
+translation=luci-i18n-bluetooth-zh-cn
+for package in "${packages[@]}"; do
+    [[ $package == "$translation" ]] || printf 'CONFIG_PACKAGE_%s=m\n' "$package"
+done >> .config
 make defconfig
 for package in "${packages[@]}"; do
+    [[ $package == "$translation" ]] && continue
     if ! grep -E "^CONFIG_PACKAGE_$package=[my]$" .config; then
         echo "SDK did not select $package" >&2
         grep -E '(^| )CONFIG_PACKAGE_(bluez|expect|luci-app-bluetooth|luci-i18n-bluetooth)' .config || true
         exit 1
     fi
 done
-make package/luci-app-bluetooth/compile -j"$(nproc)" V=s > "$work/compile.log" 2>&1 || {
+# LuCI's translation package is hidden from the SDK's defconfig.
+make package/luci-app-bluetooth/compile "CONFIG_PACKAGE_$translation=m" \
+    -j"$(nproc)" V=s > "$work/compile.log" 2>&1 || {
     tail -n 100 "$work/compile.log"
     exit 1
 }
