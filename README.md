@@ -231,6 +231,13 @@ DNS 转发服务及其 LuCI 管理界面。同步上游 OpenWrt 25.12 正式发�
 
 </details>
 
+<details>
+<summary>Firewall Live View · <code>luci-app-fwlive</code></summary>
+
+在 LuCI 中实时查看和筛选防火墙日志。同步主包和简体中文包。[上游仓库](https://github.com/lucas-albers-lz4/fwlive)
+
+</details>
+
 ## 常见问题
 
 | 现象 | 检查方法 |

@@ -103,6 +103,11 @@
     {
       "repository": "smthdagg/luci-app-wificalling-gateway",
       "package": "luci-app-wificalling-gateway"
+    },
+    {
+      "repository": "lucas-albers-lz4/fwlive",
+      "packages": ["luci-app-fwlive", "luci-i18n-fwlive-zh-cn"],
+      "apk_asset_pattern": "(?P<name>luci-app-fwlive|luci-i18n-fwlive-zh-cn)-(?P<version>[0-9][0-9A-Za-z.+~-]*)\\.apk"
     }
   ]
 }
