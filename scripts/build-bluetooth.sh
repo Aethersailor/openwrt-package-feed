@@ -38,6 +38,8 @@ sed -i "/^include .*luci\.mk/i PKG_VERSION:=$version\nPKG_RELEASE:=1\nPKG_PO_VER
 sed -i '/^\$(eval .*BuildPackage,expect))/i CONFIGURE_ARGS += --with-tcl=$(STAGING_DIR)/usr/lib --with-tclinclude=$(STAGING_DIR)/usr/include' package/expect/Makefile
 
 ./scripts/feeds update -a
+# Expect also reads private headers from the Tcl source tree via tclConfig.sh.
+sed -i '/^include .*host-build\.mk/i CONFIG_AUTOREMOVE:=' feeds/packages/lang/tcl/Makefile
 ./scripts/feeds install luci-base bluez-daemon tcl coreutils-stty alsa-lib fdk-aac sbc libmpg123
 target_board=${target_name%/*}
 target_subtarget=${target_name#*/}
