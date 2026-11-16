@@ -73,6 +73,9 @@ def resolve_branch_package(source, api, headers):
     query = urlencode({"sha": source["package_branch"], "path": directory, "per_page": 1})
     commit = json.loads(download(f"{api}/commits?{query}", headers))[0]["sha"]
     base_url = f"https://raw.githubusercontent.com/{repo}/{commit}/{directory}"
+    if "packages" in source:
+        return resolve_branch_apks(source, api, headers, commit, base_url)
+
     tag = download(f"{base_url}/version").decode("utf-8").partition("\n")[0].strip()
     if not (version := VERSION_TAG.fullmatch(tag)):
         raise ValueError(f"{repo}/{directory} has an invalid version: {tag}")
@@ -91,6 +94,42 @@ def resolve_branch_package(source, api, headers):
     }
     asset = {"name": name, "browser_download_url": f"{base_url}/{name}", "digest": checksums[name]}
     return release, [asset]
+
+
+def resolve_branch_apks(source, api, headers, commit, base_url):
+    directory = source["package_directory"]
+    files = json.loads(download(f"{api}/contents/{directory}?ref={commit}", headers))
+    pattern = re.compile(source["apk_asset_pattern"])
+    selected = {}
+    for file in files:
+        if file["type"] != "file" or not (match := pattern.fullmatch(file["name"])):
+            continue
+        identity = match.groupdict()
+        name = identity["name"]
+        if name in selected:
+            raise ValueError(f"Multiple APKs for {name} in {source['repository']}/{directory}")
+        payload = download(f"{base_url}/{file['name']}")
+        blob = f"blob {len(payload)}\0".encode("ascii") + payload
+        if len(payload) != file["size"] or hashlib.sha1(blob).hexdigest() != file["sha"]:
+            raise ValueError(f"Git blob checksum mismatch for {file['name']}")
+        selected[name] = {
+            "name": file["name"],
+            "digest": "sha256:" + hashlib.sha256(payload).hexdigest(),
+            "payload": payload,
+            "apk_identity": identity,
+        }
+    if missing := set(source["packages"]) - selected.keys():
+        raise ValueError(f"Missing APKs in {source['repository']}/{directory}: {sorted(missing)}")
+    assets = [selected[name] for name in source["packages"]]
+    release = {
+        "repository": source["repository"],
+        "packages": source["packages"],
+        "tag": assets[0]["apk_identity"]["version"],
+        "package_commit": commit,
+        "package_directory": directory,
+        "assets": {asset["name"]: asset["digest"] for asset in assets},
+    }
+    return release, assets
 
 
 def is_stable_release(release, tag_pattern):
@@ -116,6 +155,10 @@ def resolve_release(source):
         # Some upstreams also publish firmware under non-version tags.
         candidates = json.loads(download(f"{api}/releases?per_page=100", headers))
         data = next((item for item in candidates if is_stable_release(item, tag_pattern)), data)
+    if source.get("apk_release_fallback") and not has_release_apk(data):
+        # A failed upstream build can leave the newest release without APKs.
+        candidates = json.loads(download(f"{api}/releases?per_page=20", headers))
+        data = next((item for item in candidates if is_stable_release(item, tag_pattern) and has_release_apk(item)), data)
     tag = data["tag_name"]
     if not is_stable_release(data, tag_pattern):
         raise ValueError(f"{repo} {tag} is not a stable release")
@@ -124,10 +167,16 @@ def resolve_release(source):
 
     package_field = "packages" if "packages" in source else "package"
     release = {"repository": repo, package_field: source[package_field], "tag": tag, "assets": checksums}
+    if "feed_subdirectory" in source:
+        release["feed_subdirectory"] = source["feed_subdirectory"]
     if source.get("read_token_env"):
         commit = json.loads(download(f"{api}/commits/{tag}", headers))
         release["source_commit"] = commit["sha"]
     return release, apk_assets
+
+
+def has_release_apk(release):
+    return any(asset["state"] == "uploaded" and asset["name"].endswith(".apk") for asset in release["assets"])
 
 
 def bundled_apks(source, assets):

@@ -23,6 +23,7 @@ APK_IMAGE = "mirror.gcr.io/library/alpine@sha256:28bd5fe8b56d1bd048e5babf5b10710
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "releases.json"
 PUBLISHED_STATE = "https://aethersailor.github.io/openwrt-package-feed/release-state.json"
+PACKAGE_ROOT = Path("immortalwrt/apk/packages")
 
 
 def package_names(release):
@@ -68,7 +69,7 @@ def stage_package(site, release, asset, source, raw):
             raise ValueError(f"Unexpected build identity in {asset['name']}: {name} {version} {arch}")
         arch = target_arch
     elif identity := asset.get("apk_identity"):
-        target_arch = asset.get("apk_arch") or source.get("apk_arch", arch)
+        target_arch = asset.get("apk_arch") or identity.get("arch") or source.get("apk_arch", arch)
         expected_version = identity.get("version")
         if (
             name != identity["name"]
@@ -87,7 +88,7 @@ def stage_package(site, release, asset, source, raw):
     if not re.fullmatch(r"[a-z0-9][a-z0-9_.-]+", arch) or release.get("architecture", arch) != arch:
         raise ValueError(f"Invalid architecture in {asset['name']}: {arch}")
 
-    directory = site / "immortalwrt" / "apk" / "packages" / arch
+    directory = site / PACKAGE_ROOT / release.get("feed_subdirectory", "") / arch
     directory.mkdir(parents=True, exist_ok=True)
     destination = directory / filename
     if destination.exists():
@@ -116,9 +117,10 @@ def add_shared_packages(package_root, architectures):
     staging.rmdir()
 
 
-def index_packages(site, key, arch, entries):
-    directory = site / "immortalwrt" / "apk" / "packages" / arch
-    prefix = f"/feed/immortalwrt/apk/packages/{arch}"
+def index_packages(site, key, arch, entries, subdirectory=""):
+    path = PACKAGE_ROOT / subdirectory / arch
+    directory = site / path
+    prefix = f"/feed/{path.as_posix()}"
     apk(site, "mkndx", "--allow-untrusted", "--sign-key", "/signing-key.pem",
         "--output", f"{prefix}/packages.adb",
         *(f"{prefix}/{filename}" for _, _, filename in entries), key=key)
@@ -147,7 +149,7 @@ def stage_source_archive(site, release, source):
     destination.write_bytes(download(url, headers))
 
 
-def write_site_home(site, releases, architectures):
+def write_site_home(site, releases, feeds):
     release_links = []
     for item in releases:
         repo, tag = item["repository"], item["tag"]
@@ -173,11 +175,16 @@ def write_site_home(site, releases, architectures):
             label = f"{repo.split('/')[-1]} {tag}"
         release_links.append(f'<li><a href="{escape(url)}">{escape(label)}</a></li>')
     releases_html = "\n".join(release_links)
-    feeds = "\n".join(
-        f'<li><a href="immortalwrt/apk/packages/{arch}/packages.adb">{arch}</a>'
-        f' · <a href="immortalwrt/apk/packages/{arch}/index.json">版本索引</a></li>'
-        for arch in sorted(architectures)
-    )
+    feed_links = []
+    for subdirectory, architectures in sorted(feeds.items()):
+        for arch in sorted(architectures):
+            relative = (PACKAGE_ROOT / subdirectory / arch).as_posix()
+            label = f"{arch} ({subdirectory})" if subdirectory else arch
+            feed_links.append(
+                f'<li><a href="{escape(relative)}/packages.adb">{escape(label)}</a>'
+                f' · <a href="{escape(relative)}/index.json">版本索引</a></li>'
+            )
+    feed_links_html = "\n".join(feed_links)
     (site / "index.html").write_text(
         '<!doctype html>\n<html lang="zh-CN">\n<meta charset="utf-8">\n'
         '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
@@ -186,7 +193,7 @@ def write_site_home(site, releases, architectures):
         '<p><a href="https://github.com/Aethersailor/openwrt-package-feed#readme">安装说明</a>'
         ' · <a href="keys/aethersailor-feed.pem">签名公钥</a></p>\n'
         f'<h2>软件发布与对应源码</h2>\n<ul>\n{releases_html}\n</ul>\n'
-        f'<h2>按架构浏览软件源</h2>\n<ul>\n{feeds}\n</ul>\n</html>\n',
+        f'<h2>按架构浏览软件源</h2>\n<ul>\n{feed_links_html}\n</ul>\n</html>\n',
         encoding="utf-8",
     )
 
@@ -220,18 +227,20 @@ def main():
         for source, (release, assets) in zip(sources, resolved)
         for asset in assets
     ]
-    architectures = defaultdict(list)
+    feeds = defaultdict(lambda: defaultdict(list))
     with ThreadPoolExecutor(max_workers=6) as workers:
-        for arch, name, version, filename in workers.map(
+        staged = workers.map(
             lambda item: stage_package(site, *item, incoming), packages
-        ):
-            architectures[arch].append((name, version, filename))
+        )
+        for (release, _, _), (arch, name, version, filename) in zip(packages, staged):
+            feeds[release.get("feed_subdirectory", "")][arch].append((name, version, filename))
     incoming.rmdir()
     expected = {name for release in releases for name in package_names(release)}
-    found = {name for entries in architectures.values() for name, _, _ in entries}
+    found = {name for feed in feeds.values() for entries in feed.values() for name, _, _ in entries}
     if missing := expected - found:
         raise ValueError(f"Missing APKs for configured packages: {sorted(missing)}")
-    add_shared_packages(site / "immortalwrt" / "apk" / "packages", architectures)
+    for subdirectory, architectures in feeds.items():
+        add_shared_packages(site / PACKAGE_ROOT / subdirectory, architectures)
 
     for source, release in zip(sources, releases):
         if "source_commit" in release:
@@ -247,12 +256,13 @@ def main():
         public_key = site / "keys" / "aethersailor-feed.pem"
         if public_key.read_bytes() != (ROOT / "keys" / public_key.name).read_bytes():
             raise ValueError("Signing secret does not match the published feed key")
-        for arch, entries in sorted(architectures.items()):
-            index_packages(site, key, arch, entries)
+        for subdirectory, architectures in sorted(feeds.items()):
+            for arch, entries in sorted(architectures.items()):
+                index_packages(site, key, arch, entries, subdirectory)
 
-    write_site_home(site, releases, architectures)
+    write_site_home(site, releases, feeds)
     (site / "release-state.json").write_text(json.dumps(state, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print(f"Published candidate: {len(packages)} APKs across {len(architectures)} architectures")
+    print(f"Published candidate: {len(packages)} APKs and {sum(map(len, feeds.values()))} signed indexes")
 
 
 if __name__ == "__main__":

@@ -127,6 +127,76 @@ LuCI Attended Sysupgrade 和 `owut` 共用 `attendedsysupgrade.server.url`。Ope
 </details>
 
 <details>
+<summary>Nikki · <code>luci-app-nikki</code></summary>
+
+在 LuCI 中管理 Mihomo 透明代理。同步上游 OpenWrt 25.12 归档中的 `nikki`、LuCI、简体中文包和稳定版内核 `mihomo-meta`，覆盖 `aarch64_cortex-a53`、`aarch64_cortex-a76`、`aarch64_generic` 和 `x86_64`。[上游发布](https://github.com/nikkinikki-org/OpenWrt-nikki/releases)
+
+</details>
+
+<details>
+<summary>Momo · <code>luci-app-momo</code></summary>
+
+在 LuCI 中管理 sing-box 透明代理。同步上游 OpenWrt 25.12 归档中的 `momo`、LuCI 和简体中文包，覆盖 `aarch64_cortex-a53`、`aarch64_cortex-a76`、`aarch64_generic` 和 `x86_64`。`sing-box` 由固件官方源提供。[上游发布](https://github.com/nikkinikki-org/OpenWrt-momo/releases)
+
+</details>
+
+<details>
+<summary>Nikki RS · <code>luci-app-nikki-rs</code></summary>
+
+基于 clash-rs 的 Nikki 分支。同步上游 OpenWrt 25.12 归档中的 `nikki-rs`、LuCI、简体中文包和 `clash-rs`，覆盖 `aarch64_cortex-a53`、`aarch64_cortex-a76`、`aarch64_generic` 和 `x86_64`。[上游发布](https://github.com/CHKayanami/OpenWrt-nikki-rs/releases)
+
+</details>
+
+<details>
+<summary>SSR Plus+ · <code>luci-app-ssr-plus</code></summary>
+
+同步含 APK 的最新正式发布及简体中文包。ImmortalWrt 官方源提供必需依赖。OpenWrt 官方源缺少 `dns2tcp`、`ipt2socks` 和 `lua-neturl`，安装前需另行提供与固件匹配的依赖。[上游发布](https://github.com/fw876/helloworld/releases)
+
+</details>
+
+<details>
+<summary>PassWall2 · <code>luci-app-passwall2</code></summary>
+
+同步上游正式版和简体中文包。ImmortalWrt 官方源提供必需依赖。OpenWrt 需通过 PassWall 上游软件源补充 `geoview` 和 `tcping`。[上游发布](https://github.com/Openwrt-Passwall/openwrt-passwall2/releases) · [依赖软件源](https://github.com/moetayuko/openwrt-passwall-build#install-via-apk-openwrt-2512-and-snapshots)
+
+</details>
+
+<details>
+<summary>Clashoo · <code>luci-app-clashoo</code></summary>
+
+在 LuCI 中管理代理订阅及透明代理。同步上游 `clashoo`、LuCI 和简体中文包，覆盖 `aarch64_cortex-a53`、`aarch64_generic` 和 `x86_64`。Clashoo 自带 Mihomo，会占用 `/usr/bin/mihomo`。添加本源公钥后，可通过独立的 `@clashoo` 索引安装。[上游发布](https://github.com/kenzok8/openwrt-clashoo/releases)
+
+```sh
+base='https://aethersailor.github.io/openwrt-package-feed'
+echo "@clashoo $base/immortalwrt/apk/packages/clashoo/$(apk --print-arch)/packages.adb" >> /etc/apk/repositories.d/customfeeds.list
+apk update
+apk add luci-app-clashoo@clashoo
+```
+
+</details>
+
+<details>
+<summary>FullCombo Shark · <code>luci-app-fchomo</code></summary>
+
+在 LuCI 中管理 Mihomo 透明代理。同步项目指定的 Fantastic Packages 25.12 软件源提供的通用 APK 和简体中文包。可搭配本源的 `mihomo-meta`，内核覆盖范围与 Nikki 相同。[上游仓库](https://github.com/fcshark-org/openwrt-fchomo) · [APK 来源](https://fantastic-packages.github.io/releases/25.12/packages/x86_64/luci/)
+
+</details>
+
+<details>
+<summary>sing-box LuCI 面板 · <code>luci-app-sing</code></summary>
+
+在 LuCI 中编辑和校验 sing-box 配置、控制服务。同步上游通用 APK，`sing-box` 由固件官方源提供。[上游发布](https://github.com/77160860/luci-app-sing/releases)
+
+</details>
+
+<details>
+<summary>Mihomo LuCI 面板 · <code>luci-app-meta</code></summary>
+
+在 LuCI 中编辑和校验 Mihomo 配置、控制服务。同步上游通用 APK，Mihomo 内核需按项目说明安装。[上游发布](https://github.com/77160860/luci-app-meta/releases)
+
+</details>
+
+<details>
 <summary>Aurora · <code>luci-theme-aurora</code></summary>
 
 支持深色和浅色模式的 LuCI 主题。使用上游发布的通用 APK。[上游仓库](https://github.com/eamonxg/luci-theme-aurora)

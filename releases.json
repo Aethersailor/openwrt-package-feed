@@ -36,6 +36,65 @@
       "checksums": "checksums.txt"
     },
     {
+      "repository": "nikkinikki-org/OpenWrt-nikki",
+      "packages": ["nikki", "luci-app-nikki", "luci-i18n-nikki-zh-cn", "mihomo-meta"],
+      "apk_archive_pattern": "nikki_{arch}-openwrt-25\\.12\\.tar\\.gz",
+      "apk_archive_architectures": ["aarch64_cortex-a53", "aarch64_cortex-a76", "aarch64_generic", "x86_64"],
+      "apk_asset_pattern": "(?P<name>nikki|luci-app-nikki|luci-i18n-nikki-zh-cn|mihomo-meta)-(?P<version>[0-9][0-9A-Za-z_.+~-]*)\\.apk"
+    },
+    {
+      "repository": "nikkinikki-org/OpenWrt-momo",
+      "packages": ["momo", "luci-app-momo", "luci-i18n-momo-zh-cn"],
+      "apk_archive_pattern": "momo_{arch}-openwrt-25\\.12\\.tar\\.gz",
+      "apk_archive_architectures": ["aarch64_cortex-a53", "aarch64_cortex-a76", "aarch64_generic", "x86_64"],
+      "apk_asset_pattern": "(?P<name>momo|luci-app-momo|luci-i18n-momo-zh-cn)-(?P<version>[0-9][0-9A-Za-z_.+~-]*)\\.apk"
+    },
+    {
+      "repository": "CHKayanami/OpenWrt-nikki-rs",
+      "packages": ["nikki-rs", "luci-app-nikki-rs", "luci-i18n-nikki-rs-zh-cn", "clash-rs"],
+      "apk_archive_pattern": "nikki-rs_{arch}-openwrt-25\\.12\\.tar\\.gz",
+      "apk_archive_architectures": ["aarch64_cortex-a53", "aarch64_cortex-a76", "aarch64_generic", "x86_64"],
+      "apk_asset_pattern": "(?P<name>nikki-rs|luci-app-nikki-rs|luci-i18n-nikki-rs-zh-cn|clash-rs)-(?P<version>[0-9][0-9A-Za-z_.+~-]*)\\.apk"
+    },
+    {
+      "repository": "fw876/helloworld",
+      "packages": ["luci-app-ssr-plus", "luci-i18n-ssr-plus-zh-cn"],
+      "release_tag_pattern": "v[0-9]+\\.[0-9]+",
+      "apk_release_fallback": true,
+      "apk_asset_pattern": "(?P<name>luci-app-ssr-plus|luci-i18n-ssr-plus-zh-cn)-[0-9][0-9A-Za-z_.+~-]*\\.apk"
+    },
+    {
+      "repository": "Openwrt-Passwall/openwrt-passwall2",
+      "packages": ["luci-app-passwall2", "luci-i18n-passwall2-zh-cn"],
+      "release_tag_pattern": "[0-9]+\\.[0-9]+\\.[0-9]+-[0-9]+",
+      "apk_asset_pattern": "(?P<name>luci-app-passwall2|luci-i18n-passwall2-zh-cn)-(?P<version>[0-9][0-9A-Za-z_.+~-]*)\\.apk"
+    },
+    {
+      "repository": "kenzok8/openwrt-clashoo",
+      "packages": ["clashoo", "luci-app-clashoo", "luci-i18n-clashoo-zh-cn"],
+      "feed_subdirectory": "clashoo",
+      "apk_asset_pattern": "(?P<name>clashoo|luci-app-clashoo|luci-i18n-clashoo-zh-cn)-(?P<version>[0-9][0-9A-Za-z_.+~-]*)-(?P<arch>aarch64_cortex-a53|aarch64_generic|x86_64)\\.apk"
+    },
+    {
+      "repository": "fantastic-packages/releases",
+      "packages": ["luci-app-fchomo", "luci-i18n-fchomo-zh-cn"],
+      "package_branch": "gh-pages",
+      "package_directory": "25.12/packages/x86_64/luci",
+      "apk_asset_pattern": "(?P<name>luci-app-fchomo|luci-i18n-fchomo-zh-cn)-(?P<version>[0-9][0-9A-Za-z_.+~-]*)\\.apk"
+    },
+    {
+      "repository": "77160860/luci-app-sing",
+      "package": "luci-app-sing",
+      "release_tag_pattern": "sing|v[0-9]+\\.[0-9]+(?:\\.[0-9]+)?",
+      "apk_asset_pattern": "(?P<name>luci-app-sing)[-_](?P<version>[0-9][0-9A-Za-z.+~-]*)\\.apk"
+    },
+    {
+      "repository": "77160860/luci-app-meta",
+      "package": "luci-app-meta",
+      "release_tag_pattern": "meta|v[0-9]+\\.[0-9]+(?:\\.[0-9]+)?",
+      "apk_asset_pattern": "(?P<name>luci-app-meta)-(?P<version>[0-9][0-9A-Za-z.+~-]*)\\.apk"
+    },
+    {
       "repository": "Aethersailor/xgp-v3-screen",
       "packages": ["luci-app-xgp-v3-screen", "luci-i18n-xgp-v3-screen-zh-cn"],
       "apk_asset_pattern": "(?P<name>luci-app-xgp-v3-screen|luci-i18n-xgp-v3-screen-zh-cn)-(?P<version>[0-9][0-9.r-]*)\\.apk",
