@@ -22,7 +22,7 @@ from fm350 import resolve_build as resolve_fm350_build
 APK_IMAGE = "mirror.gcr.io/library/alpine@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b"
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "releases.json"
-PUBLISHED_STATE = "https://aethersailor.github.io/openwrt-package-feed/release-state.json"
+PUBLISHED_FEED = "https://aethersailor.github.io/openwrt-package-feed"
 PACKAGE_ROOT = Path("immortalwrt/apk/packages")
 
 
@@ -32,7 +32,7 @@ def package_names(release):
 
 def published_state():
     try:
-        return json.loads(download(PUBLISHED_STATE, {"Cache-Control": "no-cache"}))
+        return json.loads(download(f"{PUBLISHED_FEED}/release-state.json", {"Cache-Control": "no-cache"}))
     except HTTPError as error:
         if error.code != 404:
             raise
@@ -205,14 +205,23 @@ def main():
     args = parser.parse_args()
 
     sources = json.loads(CATALOG.read_text(encoding="utf-8"))["releases"]
-    resolved = [resolve_release(source) for source in sources]
+    previous_state = None if args.force else published_state()
+    previous_archives = {
+        release["repository"]: release
+        for release in (previous_state or {}).get("releases", [])
+        if "archives" in release
+    }
+    resolved = [
+        resolve_release(source, previous=previous_archives.get(source["repository"]), feed_url=PUBLISHED_FEED)
+        for source in sources
+    ]
     for resolve_build in (resolve_fm350_build, resolve_bluetooth_build):
         if build := resolve_build():
             resolved.append(build)
             sources.append({"repository": build[0]["repository"]})
     releases = [release for release, _ in resolved]
     state = {"releases": releases}
-    if not args.force and state == published_state():
+    if state == previous_state:
         print("Published APKs already match the configured sources.")
         return
 
@@ -228,12 +237,15 @@ def main():
         for asset in assets
     ]
     feeds = defaultdict(lambda: defaultdict(list))
+    archived_packages = []
     with ThreadPoolExecutor(max_workers=6) as workers:
         staged = workers.map(
             lambda item: stage_package(site, *item, incoming), packages
         )
-        for (release, _, _), (arch, name, version, filename) in zip(packages, staged):
+        for (release, asset, _), (arch, name, version, filename) in zip(packages, staged):
             feeds[release.get("feed_subdirectory", "")][arch].append((name, version, filename))
+            if key := asset.get("archive_key"):
+                archived_packages.append((release, key, arch, filename))
     incoming.rmdir()
     expected = {name for release in releases for name in package_names(release)}
     found = {name for feed in feeds.values() for entries in feed.values() for name, _, _ in entries}
@@ -241,6 +253,13 @@ def main():
         raise ValueError(f"Missing APKs for configured packages: {sorted(missing)}")
     for subdirectory, architectures in feeds.items():
         add_shared_packages(site / PACKAGE_ROOT / subdirectory, architectures)
+    for release, key, arch, filename in archived_packages:
+        subdirectory = release.get("feed_subdirectory", "")
+        if arch == "noarch":
+            # Shared APKs are published under an architecture, not under noarch.
+            arch = min(feeds[subdirectory], default=None)
+        if arch:
+            release["archives"]["paths"][key] = (PACKAGE_ROOT / subdirectory / arch / filename).as_posix()
 
     for source, release in zip(sources, releases):
         if "source_commit" in release:

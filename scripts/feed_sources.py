@@ -9,11 +9,12 @@ import re
 import tarfile
 import time
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 from urllib.request import Request, urlopen
 
 
 VERSION_TAG = re.compile(r"v\.?(\d+\.\d+(?:\.\d+(?:-r\d+)?|-r\d+))")
+SHA256_DIGEST = re.compile(r"sha256:[a-f0-9]{64}")
 
 
 def download(url, headers=None):
@@ -42,6 +43,8 @@ def github_json(repository, path):
 def verified_asset(asset, source):
     if "payload" in asset:
         payload = asset["payload"]
+    elif published_url := asset.get("published_url"):
+        payload = download(published_url, {"Cache-Control": "no-cache"})
     elif token_env := source.get("read_token_env"):
         payload = download(
             f"https://api.github.com/repos/{source['repository']}/releases/assets/{asset['id']}",
@@ -136,7 +139,7 @@ def is_stable_release(release, tag_pattern):
     return not release["draft"] and not release["prerelease"] and re.fullmatch(tag_pattern, release["tag_name"]) is not None
 
 
-def resolve_release(source):
+def resolve_release(source, *, previous=None, feed_url=None):
     repo = source["repository"]
     api = f"https://api.github.com/repos/{repo}"
     headers = {"Accept": "application/vnd.github+json"}
@@ -163,10 +166,16 @@ def resolve_release(source):
     if not is_stable_release(data, tag_pattern):
         raise ValueError(f"{repo} {tag} is not a stable release")
 
-    checksums, apk_assets = release_apks(source, data)
-
     package_field = "packages" if "packages" in source else "package"
-    release = {"repository": repo, package_field: source[package_field], "tag": tag, "assets": checksums}
+    release = {"repository": repo, package_field: source[package_field], "tag": tag}
+    if "apk_archive_pattern" in source:
+        assets = uploaded_assets(data)
+        apks, archive_state = bundled_apks(source, assets, previous or {}, feed_url)
+        checksums, apk_assets = select_release_apks(source, tag, assets, apks)
+        release["archives"] = archive_state
+    else:
+        checksums, apk_assets = release_apks(source, data)
+    release["assets"] = checksums
     if "feed_subdirectory" in source:
         release["feed_subdirectory"] = source["feed_subdirectory"]
     if source.get("read_token_env"):
@@ -179,47 +188,94 @@ def has_release_apk(release):
     return any(asset["state"] == "uploaded" and asset["name"].endswith(".apk") for asset in release["assets"])
 
 
-def bundled_apks(source, assets):
-    pattern = source["apk_archive_pattern"]
+def bundled_apks(source, assets, previous, feed_url):
+    previous_archives = previous.get("archives", {})
+    archive_state = {
+        "asset_pattern": source.get("apk_asset_pattern"),
+        "apk_arch": source.get("apk_arch"),
+        "digests": {},
+        "paths": {},
+    }
     apks = {}
     for arch in source.get("apk_archive_architectures", [None]):
+        pattern = source["apk_archive_pattern"]
         archive_pattern = pattern.replace("{arch}", re.escape(arch)) if arch else pattern
         bundles = [asset for name, asset in assets.items() if re.fullmatch(archive_pattern, name)]
         if len(bundles) != 1:
             raise ValueError(f"{source['repository']} expected one APK archive matching {archive_pattern}, found {len(bundles)}")
 
-        payload = verified_asset(bundles[0], source)
-        with tarfile.open(fileobj=io.BytesIO(payload), mode="r:gz") as bundle:
-            for member in bundle:
-                name = PurePosixPath(member.name).name
-                if not member.isfile() or not name.endswith(".apk"):
-                    continue
-                key = f"{arch}/{name}" if arch else name
-                if key in apks:
-                    raise ValueError(f"Duplicate APK in {bundles[0]['name']}: {name}")
-                with bundle.extractfile(member) as file:
-                    package = file.read()
-                apks[key] = {
-                    "name": name,
-                    "digest": "sha256:" + hashlib.sha256(package).hexdigest(),
-                    "payload": package,
-                    "apk_arch": arch,
-                }
+        bundle = bundles[0]
+        digest = bundle.get("digest")
+        if not SHA256_DIGEST.fullmatch(digest or ""):
+            raise ValueError(f"{source['repository']} has no valid GitHub SHA-256 for {bundle['name']}")
+        slot = arch or ""
+        archive_state["digests"][slot] = digest
+        if (
+            feed_url
+            and "checksums" not in source
+            and previous_archives.get("asset_pattern") == archive_state["asset_pattern"]
+            and previous_archives.get("digests", {}).get(slot) == digest
+        ):
+            paths = {key: path for key, path in previous_archives["paths"].items() if key.rpartition("/")[0] == slot}
+            if paths:
+                print(f"Archive unchanged: {source['repository']} {bundle['name']}", flush=True)
+                archive_state["paths"].update(paths)
+                apks.update({
+                    key: {
+                        "name": PurePosixPath(key).name,
+                        "digest": previous["assets"][key],
+                        "published_url": f"{feed_url}/{quote(path)}",
+                        "apk_arch": arch,
+                        "archive_key": key,
+                    }
+                    for key, path in paths.items()
+                })
+                continue
+        print(f"Downloading archive: {source['repository']} {bundle['name']}", flush=True)
+        apks.update(extract_archive_apks(source, bundle, arch))
+    return apks, archive_state
+
+
+def extract_archive_apks(source, asset, arch):
+    payload = verified_asset(asset, source)
+    apks = {}
+    with tarfile.open(fileobj=io.BytesIO(payload), mode="r:gz") as bundle:
+        for member in bundle:
+            name = PurePosixPath(member.name).name
+            if not member.isfile() or not name.endswith(".apk"):
+                continue
+            key = f"{arch}/{name}" if arch else name
+            if key in apks:
+                raise ValueError(f"Duplicate APK in {asset['name']}: {name}")
+            with bundle.extractfile(member) as file:
+                package = file.read()
+            apks[key] = {
+                "name": name,
+                "digest": "sha256:" + hashlib.sha256(package).hexdigest(),
+                "payload": package,
+                "apk_arch": arch,
+                "archive_key": key,
+            }
     return apks
 
 
+def uploaded_assets(data):
+    return {asset["name"]: asset for asset in data["assets"] if asset["state"] == "uploaded"}
+
+
 def release_apks(source, data):
-    repo, tag = source["repository"], data["tag_name"]
-    assets = {asset["name"]: asset for asset in data["assets"] if asset["state"] == "uploaded"}
-    if "apk_archive_pattern" in source:
-        apk_assets = bundled_apks(source, assets)
-    else:
-        apk_assets = {name: asset for name, asset in assets.items() if name.endswith(".apk")}
+    assets = uploaded_assets(data)
+    apks = {name: asset for name, asset in assets.items() if name.endswith(".apk")}
+    return select_release_apks(source, data["tag_name"], assets, apks)
+
+
+def select_release_apks(source, tag, assets, apk_assets):
+    repo = source["repository"]
     if not apk_assets:
         raise ValueError(f"{repo} {tag} has no APK assets")
     checksums = {name: asset.get("digest") for name, asset in apk_assets.items()}
     for name, digest in checksums.items():
-        if not re.fullmatch(r"sha256:[a-f0-9]{64}", digest or ""):
+        if not SHA256_DIGEST.fullmatch(digest or ""):
             raise ValueError(f"{repo} {tag} has no valid GitHub SHA-256 for {name}")
 
     if "checksums" in source:
