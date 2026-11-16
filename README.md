@@ -373,6 +373,6 @@ DNS 转发服务及其 LuCI 管理界面。同步上游 OpenWrt 25.12 正式发�
 
 ## 同步与发布
 
-[软件源发布工作流](.github/workflows/publish-feed.yml) 每 8 小时检查一次上游，也可手动运行。工作流核对 APK 的 SHA-256、包名、版本和架构，并生成签名后的 `packages.adb` 及供 `owut` 读取的 `index.json`。校验失败时，线上继续提供上一次成功发布的内容。GitHub 的定时任务可能延后，公开仓库连续 60 天无活动时也可能暂停定时运行。
+[软件源发布工作流](.github/workflows/publish-feed.yml) 每 30 分钟检查一次上游，也可手动运行。工作流比较 GitHub Release 提供的归档 SHA-256，同一个标签下替换的归档也会重新下载。重新发布时，校验值相同的归档复用线上已校验的 APK。工作流核对 APK 的 SHA-256、包名、版本和架构，并生成签名后的 `packages.adb` 及供 `owut` 读取的 `index.json`。校验失败时，线上继续提供上一次成功发布的内容。GitHub 的定时任务可能延后，公开仓库连续 60 天无活动时也可能暂停定时运行。
 
 上游 APK 同步时保留原包内容和版本号。FM350 的 `aarch64_generic` 包和蓝牙包组每天检查上游，分别在 APK 校验值和源码提交变化时重新构建。构建记录附有源码和 SDK 信息。许可证随各上游项目发布，对应源码和构建记录可从[软件源首页](https://aethersailor.github.io/openwrt-package-feed/)查阅。
