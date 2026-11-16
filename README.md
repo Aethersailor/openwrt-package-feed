@@ -171,7 +171,7 @@ LuCI 主题与仪表盘可分别安装。主题和仪表盘的简体中文包分
 <details>
 <summary>西瓜皮 V3 状态屏 · <code>luci-app-xgp-v3-screen</code></summary>
 
-通过 `spidev` 驱动西瓜皮 V3 的板载 GC9307 屏幕，提供 LuCI 配置页。软件包位于 `aarch64_generic` 索引，公开源码快照可从软件源首页下载。[维护仓库（需访问权限）](https://github.com/Aethersailor/xgp-v3-screen) · [公开源码快照](https://aethersailor.github.io/openwrt-package-feed/)
+通过 `spidev` 驱动西瓜皮 V3 的板载 GC9307 屏幕，提供英文 LuCI 配置页。需要简体中文时可另装 `luci-i18n-xgp-v3-screen-zh-cn`。主包和语言包均由 `aarch64_generic` 索引提供。 [维护仓库](https://github.com/Aethersailor/xgp-v3-screen) · [源码快照](https://aethersailor.github.io/openwrt-package-feed/)
 
 </details>
 

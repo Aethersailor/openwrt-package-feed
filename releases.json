@@ -37,7 +37,9 @@
     },
     {
       "repository": "Aethersailor/xgp-v3-screen",
-      "package": "luci-app-xgp-v3-screen",
+      "packages": ["luci-app-xgp-v3-screen", "luci-i18n-xgp-v3-screen-zh-cn"],
+      "apk_asset_pattern": "(?P<name>luci-app-xgp-v3-screen|luci-i18n-xgp-v3-screen-zh-cn)-(?P<version>[0-9][0-9.r-]*)\\.apk",
+      "apk_arch": "aarch64_generic",
       "checksums": "SHA256SUMS",
       "read_token_env": "XGP_RELEASE_READ_TOKEN"
     },
