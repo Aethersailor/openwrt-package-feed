@@ -211,13 +211,6 @@ apk add luci-app-clashoo@clashoo
 </details>
 
 <details>
-<summary>Argon · <code>luci-theme-argon</code></summary>
-
-支持深色和浅色模式、登录背景和外观设置的 LuCI 主题。同步上游的通用 APK 和简体中文包 `luci-i18n-argon-config-zh-cn`。已安装旧版独立配置插件时，请按上游说明先单独安装与目标主题同次发布的 `luci-app-argon-config` 兼容包，再升级主题。[上游安装说明](https://github.com/jerrykuku/luci-theme-argon/blob/master/README_ZH.md#安装)
-
-</details>
-
-<details>
 <summary>Vantage · <code>luci-theme-vantage</code>、<code>luci-app-vantage</code></summary>
 
 LuCI 主题与仪表盘可分别安装。主题和仪表盘的简体中文包分别为 `luci-i18n-vantage-theme-zh-cn` 和 `luci-i18n-vantage-zh-cn`。上游 APK 面向 OpenWrt 25.12 构建。[上游仓库](https://github.com/anothaDev/luci-theme-vantage)

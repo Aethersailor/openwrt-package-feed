@@ -146,11 +146,6 @@
       "apk_asset_pattern": "(?P<name>mosdns|luci-app-mosdns|luci-i18n-mosdns-zh-cn|geo2txt)-(?P<version>[0-9][0-9A-Za-z_.+~-]*)\\.apk"
     },
     {
-      "repository": "jerrykuku/luci-theme-argon",
-      "packages": ["luci-theme-argon", "luci-i18n-argon-config-zh-cn", "luci-app-argon-config"],
-      "apk_asset_pattern": "(?P<name>luci-theme-argon|luci-i18n-argon-config-zh-cn|luci-app-argon-config)-(?P<version>[0-9][0-9A-Za-z_.+~-]*)\\.apk"
-    },
-    {
       "repository": "timsaya/openwrt-bandix",
       "package": "bandix",
       "apk_asset_pattern": "(?P<name>bandix)-(?P<version>[0-9][0-9A-Za-z.+~-]*)_(?:aarch64_cortex-a53|aarch64_cortex-a76|aarch64_generic|x86_64)\\.apk"
