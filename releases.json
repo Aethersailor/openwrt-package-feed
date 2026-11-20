@@ -27,18 +27,15 @@
     },
     {
       "repository": "nikkinikki-org/OpenWrt-nikki",
-      "apk_archive_pattern": "nikki_{arch}-openwrt-25\\.12\\.tar\\.gz",
-      "apk_archive_architectures": ["aarch64_cortex-a53", "aarch64_cortex-a76", "aarch64_generic", "x86_64"]
+      "apk_archive_pattern": "nikki_(?P<arch>[a-z0-9][a-z0-9_.-]+)-openwrt-25\\.12\\.tar\\.gz"
     },
     {
       "repository": "nikkinikki-org/OpenWrt-momo",
-      "apk_archive_pattern": "momo_{arch}-openwrt-25\\.12\\.tar\\.gz",
-      "apk_archive_architectures": ["aarch64_cortex-a53", "aarch64_cortex-a76", "aarch64_generic", "x86_64"]
+      "apk_archive_pattern": "momo_(?P<arch>[a-z0-9][a-z0-9_.-]+)-openwrt-25\\.12\\.tar\\.gz"
     },
     {
       "repository": "CHKayanami/OpenWrt-nikki-rs",
-      "apk_archive_pattern": "nikki-rs_{arch}-openwrt-25\\.12\\.tar\\.gz",
-      "apk_archive_architectures": ["aarch64_cortex-a53", "aarch64_cortex-a76", "aarch64_generic", "x86_64"]
+      "apk_archive_pattern": "nikki-rs_(?P<arch>[a-z0-9][a-z0-9_.-]+)-openwrt-25\\.12\\.tar\\.gz"
     },
     {
       "repository": "fw876/helloworld",
@@ -56,10 +53,10 @@
     },
     {
       "repository": "fantastic-packages/releases",
-      "packages": ["luci-app-fchomo", "luci-i18n-fchomo-zh-cn"],
+      "package": "luci-app-fchomo",
       "package_branch": "gh-pages",
       "package_directory": "25.12/packages/x86_64/luci",
-      "apk_asset_pattern": "(?P<name>luci-app-fchomo|luci-i18n-fchomo-zh-cn)-(?P<version>[0-9][0-9A-Za-z_.+~-]*)\\.apk"
+      "apk_asset_pattern": "(?P<name>luci-app-fchomo|luci-i18n-fchomo-[a-z0-9_-]+)-(?P<version>[0-9][0-9A-Za-z_.+~-]*)\\.apk"
     },
     {
       "repository": "77160860/luci-app-sing",
@@ -105,8 +102,7 @@
     },
     {
       "repository": "sbwml/luci-app-mosdns",
-      "apk_archive_pattern": "{arch}-openwrt-25\\.12\\.tar\\.gz",
-      "apk_archive_architectures": ["aarch64_cortex-a53", "aarch64_cortex-a76", "aarch64_generic", "x86_64"]
+      "apk_archive_pattern": "(?P<arch>[a-z0-9][a-z0-9_.-]+)-openwrt-25\\.12\\.tar\\.gz"
     },
     {
       "repository": "timsaya/openwrt-bandix"

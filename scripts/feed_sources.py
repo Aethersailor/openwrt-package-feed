@@ -76,7 +76,7 @@ def resolve_branch_package(source, api, headers):
     query = urlencode({"sha": source["package_branch"], "path": directory, "per_page": 1})
     commit = json.loads(download(f"{api}/commits?{query}", headers))[0]["sha"]
     base_url = f"https://raw.githubusercontent.com/{repo}/{commit}/{directory}"
-    if "packages" in source:
+    if "apk_asset_pattern" in source:
         return resolve_branch_apks(source, api, headers, commit, base_url)
 
     tag = download(f"{base_url}/version").decode("utf-8").partition("\n")[0].strip()
@@ -121,13 +121,14 @@ def resolve_branch_apks(source, api, headers, commit, base_url):
             "payload": payload,
             "apk_identity": identity,
         }
-    if missing := set(source["packages"]) - selected.keys():
-        raise ValueError(f"Missing APKs in {source['repository']}/{directory}: {sorted(missing)}")
-    assets = [selected[name] for name in source["packages"]]
+    package = source["package"]
+    if package not in selected:
+        raise ValueError(f"Missing APK for {package} in {source['repository']}/{directory}")
+    assets = list(selected.values())
     release = {
         "repository": source["repository"],
-        "packages": source["packages"],
-        "tag": assets[0]["apk_identity"]["version"],
+        "packages": sorted(selected),
+        "tag": selected[package]["apk_identity"]["version"],
         "package_commit": commit,
         "package_directory": directory,
         "assets": {asset["name"]: asset["digest"] for asset in assets},
@@ -195,15 +196,16 @@ def bundled_apks(source, assets, previous, feed_url):
         "digests": {},
         "paths": {},
     }
-    apks = {}
-    for arch in source.get("apk_archive_architectures", [None]):
-        pattern = source["apk_archive_pattern"]
-        archive_pattern = pattern.replace("{arch}", re.escape(arch)) if arch else pattern
-        bundles = [asset for name, asset in assets.items() if re.fullmatch(archive_pattern, name)]
-        if len(bundles) != 1:
-            raise ValueError(f"{source['repository']} expected one APK archive matching {archive_pattern}, found {len(bundles)}")
+    pattern = re.compile(source["apk_archive_pattern"])
+    bundles = [
+        (match.groupdict().get("arch"), asset)
+        for name, asset in assets.items() if (match := pattern.fullmatch(name))
+    ]
+    if "arch" not in pattern.groupindex and len(bundles) != 1:
+        raise ValueError(f"{source['repository']} expected one APK archive matching {pattern.pattern}, found {len(bundles)}")
 
-        bundle = bundles[0]
+    apks = {}
+    for arch, bundle in bundles:
         digest = bundle.get("digest")
         if not SHA256_DIGEST.fullmatch(digest or ""):
             raise ValueError(f"{source['repository']} has no valid GitHub SHA-256 for {bundle['name']}")
