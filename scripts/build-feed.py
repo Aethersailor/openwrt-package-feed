@@ -87,15 +87,29 @@ def stage_package(site, release, asset, source, raw):
         raise ValueError(f"Invalid architecture in {asset['name']}: {arch}")
     arch = target_arch
 
-    directory = site / PACKAGE_ROOT / release.get("feed_subdirectory", "") / arch
-    directory.mkdir(parents=True, exist_ok=True)
-    destination = directory / filename
-    if destination.exists():
-        raise ValueError(f"Duplicate package {name} for {arch}")
     temporary.chmod(0o644)
+    return arch, name, version, filename, temporary
+
+
+def place_package(site, release, asset, staged, published):
+    arch, name, version, filename, temporary = staged
+    directory = site / PACKAGE_ROOT / release.get("feed_subdirectory", "") / arch
+    destination = directory / filename
+    if owner := published.get(destination):
+        if owner is not release or package_names(release) or "archive_key" in asset:
+            raise ValueError(f"Duplicate package {name} for {arch}")
+        # A Release may contain two builds that declare the same APK architecture.
+        if asset["name"].endswith((f"_{arch}.apk", f"-{arch}.apk")):
+            temporary.replace(destination)
+        else:
+            temporary.unlink()
+        return False
+
+    directory.mkdir(parents=True, exist_ok=True)
     temporary.rename(destination)
+    published[destination] = release
     print(f"{arch}: {name} {version}", flush=True)
-    return arch, name, version, filename
+    return True
 
 
 def add_shared_packages(package_root, architectures):
@@ -237,11 +251,15 @@ def main():
     ]
     feeds = defaultdict(lambda: defaultdict(list))
     archived_packages = []
+    published = {}
     with ThreadPoolExecutor(max_workers=6) as workers:
         staged = workers.map(
             lambda item: stage_package(site, *item, incoming), packages
         )
-        for (release, asset, _), (arch, name, version, filename) in zip(packages, staged):
+        for (release, asset, _), package in zip(packages, staged):
+            if not place_package(site, release, asset, package, published):
+                continue
+            arch, name, version, filename, _ = package
             feeds[release.get("feed_subdirectory", "")][arch].append((name, version, filename))
             if key := asset.get("archive_key"):
                 archived_packages.append((release, key, arch, filename))
@@ -280,7 +298,7 @@ def main():
 
     write_site_home(site, releases, feeds)
     (site / "release-state.json").write_text(json.dumps(state, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print(f"Published candidate: {len(packages)} APKs and {sum(map(len, feeds.values()))} signed indexes")
+    print(f"Published candidate: {len(published)} APKs and {sum(map(len, feeds.values()))} signed indexes")
 
 
 if __name__ == "__main__":
