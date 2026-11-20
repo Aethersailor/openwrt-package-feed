@@ -4,13 +4,15 @@
 import argparse
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
+from hashlib import file_digest
 from html import escape
 import json
 import os
 from pathlib import Path
 import re
-from shutil import copyfile
+from shutil import copyfile, rmtree
 import subprocess
+import sys
 import tempfile
 from urllib.error import HTTPError
 
@@ -24,6 +26,8 @@ ROOT = Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "releases.json"
 PUBLISHED_FEED = "https://aethersailor.github.io/openwrt-package-feed"
 PACKAGE_ROOT = Path("immortalwrt/apk/packages")
+PACKAGE_FILES = PACKAGE_ROOT / "files"
+PACKAGE_NAME_SPEC = f"../{PACKAGE_FILES.name}/" + '${name}-${hash}.apk'
 
 
 def package_names(release):
@@ -49,7 +53,15 @@ def apk(site, *args, key=None):
     if key:
         command += ["--mount", f"type=bind,source={key},target=/signing-key.pem,readonly"]
     command += [APK_IMAGE, "apk", *args]
-    return subprocess.run(command, check=True, text=True, stdout=subprocess.PIPE).stdout
+    result = subprocess.run(command, text=True, capture_output=True)
+    if result.stderr:
+        warning = f"not matching package name specification '{PACKAGE_NAME_SPEC}'"
+        for line in result.stderr.splitlines():
+            if args[0] == "mkndx" and not result.returncode and line.startswith("WARNING: ") and line.endswith(warning):
+                continue
+            print(line, file=sys.stderr)
+    result.check_returncode()
+    return result.stdout
 
 
 def stage_package(site, release, asset, source, raw):
@@ -69,9 +81,6 @@ def stage_package(site, release, asset, source, raw):
         target_arch, _, asset_filename = asset["name"].partition("--")
         if target_arch not in release["build_architectures"] or asset_filename != filename:
             raise ValueError(f"Unexpected build identity in {asset['name']}: {name} {version} {arch}")
-    elif identity := asset.get("apk_identity"):
-        if name != identity["name"] or version != identity["version"]:
-            raise ValueError(f"Unexpected release asset identity in {asset['name']}: {name} {version} {arch}")
     elif expected_names:
         tag_version = VERSION_TAG.fullmatch(release["tag"])[1]
         version_pattern = re.escape(tag_version)
@@ -91,9 +100,9 @@ def stage_package(site, release, asset, source, raw):
     return arch, name, version, filename, temporary
 
 
-def place_package(site, release, asset, staged, published):
+def place_package(incoming, release, asset, staged, published):
     arch, name, version, filename, temporary = staged
-    directory = site / PACKAGE_ROOT / release.get("feed_subdirectory", "") / arch
+    directory = incoming / arch
     destination = directory / filename
     if owner := published.get(destination):
         if owner is not release or package_names(release) or "archive_key" in asset:
@@ -103,47 +112,68 @@ def place_package(site, release, asset, staged, published):
             temporary.replace(destination)
         else:
             temporary.unlink()
-        return False
+        return None
 
     directory.mkdir(parents=True, exist_ok=True)
     temporary.rename(destination)
     published[destination] = release
     print(f"{arch}: {name} {version}", flush=True)
-    return True
+    return destination
 
 
-def add_shared_packages(package_root, architectures):
+def add_shared_packages(architectures):
     shared = architectures.pop("noarch", [])
     if not shared:
         return
 
-    staging = package_root / "noarch"
     for arch, entries in architectures.items():
         names = {name for name, _, _ in entries}
-        for name, version, filename in shared:
+        for name, version, path in shared:
             if name in names:
                 raise ValueError(f"Duplicate package {name} for {arch}")
-            copyfile(staging / filename, package_root / arch / filename)
-            entries.append((name, version, filename))
-    for _, _, filename in shared:
-        (staging / filename).unlink()
-    staging.rmdir()
+            entries.append((name, version, path))
 
 
-def index_packages(site, key, arch, entries, subdirectory=""):
-    path = PACKAGE_ROOT / subdirectory / arch
-    directory = site / path
-    prefix = f"/feed/{path.as_posix()}"
+def write_index(site, key, index_path, files):
+    # Staged filenames use versions. Published filenames use index digests.
     apk(site, "mkndx", "--allow-untrusted", "--sign-key", "/signing-key.pem",
-        "--output", f"{prefix}/packages.adb",
-        *(f"{prefix}/{filename}" for _, _, filename in entries), key=key)
-    packages = json.loads(apk(site, "adbdump", "--format", "json", f"{prefix}/packages.adb"))["packages"]
+        "--pkgname-spec", PACKAGE_NAME_SPEC, "--output", index_path,
+        *(f"/feed/{package.relative_to(site).as_posix()}" for package in files), key=key)
+
+
+def index_packages(site, key, arch, entries, published_files):
+    path = PACKAGE_ROOT / arch
+    directory = site / path
+    directory.mkdir()
+    index_path = f"/feed/{(path / 'packages.adb').as_posix()}"
+    write_index(site, key, index_path, (package for _, _, package in entries))
+    packages = json.loads(apk(site, "adbdump", "--format", "json", index_path))["packages"]
     versions = {package["name"]: package["version"] for package in packages}
     expected = {name: version for name, version, _ in entries}
     if versions != expected or any(package["arch"] not in (arch, "noarch") for package in packages):
         raise ValueError(f"Unexpected index content for {arch}")
+
+    staged_paths = {name: path for name, _, path in entries}
+    files = []
+    sizes_match = True
+    for package in packages:
+        name = package["name"]
+        staged = staged_paths[name]
+        filename = Path(f"{name}-{package['hashes']}.apk").name
+        path = PACKAGE_FILES / filename
+        destination = site / path
+        if not destination.exists():
+            copyfile(staged, destination)
+        published_files[staged] = path
+        files.append(destination)
+        sizes_match = sizes_match and destination.stat().st_size == package["file-size"]
+
+    if not sizes_match:
+        # APKs with the same identity can have different signature bytes.
+        write_index(site, key, index_path, files)
+
     apk(site, "--keys-dir", "/feed/keys", "--repositories-file", "/dev/null",
-        "--repository", f"{prefix}/packages.adb", "--arch", arch,
+        "--repository", index_path, "--arch", arch,
         "fetch", "--simulate", *sorted(versions))
     index = {"version": 2, "architecture": arch, "packages": dict(sorted(versions.items()))}
     (directory / "index.json").write_text(json.dumps(index, indent=2) + "\n", encoding="utf-8")
@@ -189,14 +219,12 @@ def write_site_home(site, releases, feeds):
         release_links.append(f'<li><a href="{escape(url)}">{escape(label)}</a></li>')
     releases_html = "\n".join(release_links)
     feed_links = []
-    for subdirectory, architectures in sorted(feeds.items()):
-        for arch in sorted(architectures):
-            relative = (PACKAGE_ROOT / subdirectory / arch).as_posix()
-            label = f"{arch} ({subdirectory})" if subdirectory else arch
-            feed_links.append(
-                f'<li><a href="{escape(relative)}/packages.adb">{escape(label)}</a>'
-                f' · <a href="{escape(relative)}/index.json">版本索引</a></li>'
-            )
+    for arch in sorted(feeds):
+        relative = (PACKAGE_ROOT / arch).as_posix()
+        feed_links.append(
+            f'<li><a href="{escape(relative)}/packages.adb">{escape(arch)}</a>'
+            f' · <a href="{escape(relative)}/index.json">版本索引</a></li>'
+        )
     feed_links_html = "\n".join(feed_links)
     (site / "index.html").write_text(
         '<!doctype html>\n<html lang="zh-CN">\n<meta charset="utf-8">\n'
@@ -233,7 +261,7 @@ def main():
             resolved.append(build)
             sources.append({"repository": build[0]["repository"]})
     releases = [release for release, _ in resolved]
-    state = {"releases": releases}
+    state = {"package_name_spec": PACKAGE_NAME_SPEC, "releases": releases}
     if state == previous_state:
         print("Published APKs already match the configured sources.")
         return
@@ -249,7 +277,7 @@ def main():
         for source, (release, assets) in zip(sources, resolved)
         for asset in assets
     ]
-    feeds = defaultdict(lambda: defaultdict(list))
+    feeds = defaultdict(list)
     archived_packages = []
     published = {}
     with ThreadPoolExecutor(max_workers=6) as workers:
@@ -257,26 +285,17 @@ def main():
             lambda item: stage_package(site, *item, incoming), packages
         )
         for (release, asset, _), package in zip(packages, staged):
-            if not place_package(site, release, asset, package, published):
-                continue
-            arch, name, version, filename, _ = package
-            feeds[release.get("feed_subdirectory", "")][arch].append((name, version, filename))
-            if key := asset.get("archive_key"):
-                archived_packages.append((release, key, arch, filename))
-    incoming.rmdir()
+            if path := place_package(incoming, release, asset, package, published):
+                arch, name, version, _, _ = package
+                feeds[arch].append((name, version, path))
+                if key := asset.get("archive_key"):
+                    archived_packages.append((release, key, path))
     expected = {name for release in releases for name in package_names(release)}
-    found = {name for feed in feeds.values() for entries in feed.values() for name, _, _ in entries}
+    found = {name for entries in feeds.values() for name, _, _ in entries}
     if missing := expected - found:
         raise ValueError(f"Missing APKs for configured packages: {sorted(missing)}")
-    for subdirectory, architectures in feeds.items():
-        add_shared_packages(site / PACKAGE_ROOT / subdirectory, architectures)
-    for release, key, arch, filename in archived_packages:
-        subdirectory = release.get("feed_subdirectory", "")
-        if arch == "noarch":
-            # Shared APKs are published under an architecture, not under noarch.
-            arch = min(feeds[subdirectory], default=None)
-        if arch:
-            release["archives"]["paths"][key] = (PACKAGE_ROOT / subdirectory / arch / filename).as_posix()
+    add_shared_packages(feeds)
+    (site / PACKAGE_FILES).mkdir(parents=True)
 
     for source, release in zip(sources, releases):
         if "source_commit" in release:
@@ -292,13 +311,25 @@ def main():
         public_key = site / "keys" / "aethersailor-feed.pem"
         if public_key.read_bytes() != (ROOT / "keys" / public_key.name).read_bytes():
             raise ValueError("Signing secret does not match the published feed key")
-        for subdirectory, architectures in sorted(feeds.items()):
-            for arch, entries in sorted(architectures.items()):
-                index_packages(site, key, arch, entries, subdirectory)
+        published_files = {}
+        for arch, entries in sorted(feeds.items()):
+            index_packages(site, key, arch, entries, published_files)
 
+    archived_file_digests = {}
+    for release, key, path in archived_packages:
+        relative = published_files[path]
+        archive = release["archives"]
+        archive["paths"][key] = relative.as_posix()
+        if relative not in archived_file_digests:
+            with (site / relative).open("rb") as file:
+                archived_file_digests[relative] = "sha256:" + file_digest(file, "sha256").hexdigest()
+        digest = archived_file_digests[relative]
+        if digest != release["assets"][key]:
+            archive.setdefault("published_digests", {})[key] = digest
+    rmtree(incoming)
     write_site_home(site, releases, feeds)
     (site / "release-state.json").write_text(json.dumps(state, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print(f"Published candidate: {len(published)} APKs and {sum(map(len, feeds.values()))} signed indexes")
+    print(f"Published candidate: {len(set(published_files.values()))} unique APKs and {len(feeds)} signed indexes")
 
 
 if __name__ == "__main__":

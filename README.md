@@ -127,76 +127,6 @@ LuCI Attended Sysupgrade 和 `owut` 共用 `attendedsysupgrade.server.url`。Ope
 </details>
 
 <details>
-<summary>Nikki · <code>luci-app-nikki</code></summary>
-
-在 LuCI 中管理 Mihomo 透明代理。同步上游 OpenWrt 25.12 归档中的全部 APK，包括 `nikki`、LuCI、语言包、`mihomo-meta` 和 `mihomo-alpha`，覆盖上游 25.12 归档提供的所有架构。[上游发布](https://github.com/nikkinikki-org/OpenWrt-nikki/releases)
-
-</details>
-
-<details>
-<summary>Momo · <code>luci-app-momo</code></summary>
-
-在 LuCI 中管理 sing-box 透明代理。同步上游 OpenWrt 25.12 归档中的 `momo`、LuCI 和简体中文包，覆盖上游 25.12 归档提供的所有架构。`sing-box` 由固件官方源提供。[上游发布](https://github.com/nikkinikki-org/OpenWrt-momo/releases)
-
-</details>
-
-<details>
-<summary>Nikki RS · <code>luci-app-nikki-rs</code></summary>
-
-基于 clash-rs 的 Nikki 分支。同步上游 OpenWrt 25.12 归档中的 `nikki-rs`、LuCI、简体中文包和 `clash-rs`，覆盖上游 25.12 归档提供的所有架构。[上游发布](https://github.com/CHKayanami/OpenWrt-nikki-rs/releases)
-
-</details>
-
-<details>
-<summary>SSR Plus+ · <code>luci-app-ssr-plus</code></summary>
-
-同步含 APK 的最新正式发布及简体中文包。ImmortalWrt 官方源提供必需依赖。OpenWrt 官方源缺少 `dns2tcp`、`ipt2socks` 和 `lua-neturl`，安装前需另行提供与固件匹配的依赖。[上游发布](https://github.com/fw876/helloworld/releases)
-
-</details>
-
-<details>
-<summary>PassWall2 · <code>luci-app-passwall2</code></summary>
-
-同步上游正式版和简体中文包。ImmortalWrt 官方源提供必需依赖。OpenWrt 需通过 PassWall 上游软件源补充 `geoview` 和 `tcping`。[上游发布](https://github.com/Openwrt-Passwall/openwrt-passwall2/releases) · [依赖软件源](https://github.com/moetayuko/openwrt-passwall-build#install-via-apk-openwrt-2512-and-snapshots)
-
-</details>
-
-<details>
-<summary>Clashoo · <code>luci-app-clashoo</code></summary>
-
-在 LuCI 中管理代理订阅及透明代理。同步上游 `clashoo`、LuCI 和语言包。各架构见软件源首页的独立索引。Clashoo 自带 Mihomo，会占用 `/usr/bin/mihomo`。添加本源公钥后，可通过独立的 `@clashoo` 索引安装。[上游发布](https://github.com/kenzok8/openwrt-clashoo/releases)
-
-```sh
-base='https://aethersailor.github.io/openwrt-package-feed'
-echo "@clashoo $base/immortalwrt/apk/packages/clashoo/$(apk --print-arch)/packages.adb" >> /etc/apk/repositories.d/customfeeds.list
-apk update
-apk add luci-app-clashoo@clashoo
-```
-
-</details>
-
-<details>
-<summary>FullCombo Shark · <code>luci-app-fchomo</code></summary>
-
-在 LuCI 中管理 Mihomo 透明代理。同步项目指定的 Fantastic Packages 25.12 软件源提供的通用 APK 和全部语言包。可搭配本源的 `mihomo-meta`，内核覆盖范围与 Nikki 相同。[上游仓库](https://github.com/fcshark-org/openwrt-fchomo) · [APK 来源](https://fantastic-packages.github.io/releases/25.12/packages/x86_64/luci/)
-
-</details>
-
-<details>
-<summary>sing-box LuCI 面板 · <code>luci-app-sing</code></summary>
-
-在 LuCI 中编辑和校验 sing-box 配置、控制服务。同步上游通用 APK，`sing-box` 由固件官方源提供。[上游发布](https://github.com/77160860/luci-app-sing/releases)
-
-</details>
-
-<details>
-<summary>Mihomo LuCI 面板 · <code>luci-app-meta</code></summary>
-
-在 LuCI 中编辑和校验 Mihomo 配置、控制服务。同步上游通用 APK，Mihomo 内核需按项目说明安装。[上游发布](https://github.com/77160860/luci-app-meta/releases)
-
-</details>
-
-<details>
 <summary>Aurora · <code>luci-theme-aurora</code></summary>
 
 支持深色和浅色模式的 LuCI 主题。使用上游发布的通用 APK。[上游仓库](https://github.com/eamonxg/luci-theme-aurora)
@@ -330,13 +260,6 @@ DNS 转发服务及其 LuCI 管理界面。同步上游 OpenWrt 25.12 归档中�
 </details>
 
 <details>
-<summary>Meow · <code>luci-app-meow</code></summary>
-
-兼容 Mihomo 配置的代理核心，提供 LuCI 配置、运行状态和日志页面。同步核心 `meow` 和 LuCI 界面。[上游仓库](https://github.com/meow-rs/meow-rs)
-
-</details>
-
-<details>
 <summary>ModemData · <code>luci-app-modemdata</code></summary>
 
 在 LuCI 中查看 4G / 5G 模组的连接状态、小区和信号参数。同步 `modemdata`、LuCI 界面和简体中文包。[上游仓库](https://github.com/4IceG/luci-app-modemdata)
@@ -366,6 +289,6 @@ DNS 转发服务及其 LuCI 管理界面。同步上游 OpenWrt 25.12 归档中�
 
 ## 同步与发布
 
-[软件源发布工作流](.github/workflows/publish-feed.yml) 每 30 分钟检查一次上游，也可手动运行。工作流比较 GitHub Release 提供的归档 SHA-256，同一个标签下替换的归档也会重新下载。重新发布时，校验值相同的归档复用线上已校验的 APK。工作流收录所配置 Release 或归档中的全部适用 APK，并按包内的包名、版本和架构生成索引。Nikki、Momo、Nikki-rs 和 MosDNS 按上游 OpenWrt 25.12 归档文件名自动发现架构。工作流核对下载内容的 SHA-256，生成签名后的 `packages.adb` 和供 `owut` 读取的 `index.json`。校验失败时，线上继续提供上一次成功发布的内容。GitHub 的定时任务可能延后，公开仓库连续 60 天无活动时也可能暂停定时运行。
+[软件源发布工作流](.github/workflows/publish-feed.yml) 每 30 分钟检查一次上游，也可手动运行。工作流比较 GitHub Release 提供的归档 SHA-256，同一个标签下替换的归档也会重新下载。重新发布时，校验值相同的归档复用线上已校验的 APK。工作流收录所配置 Release 或归档中的全部适用 APK，并按包内的包名、版本和架构生成索引。内容相同的 APK 按索引摘要存一份，各架构索引共享该文件。MosDNS 按上游 OpenWrt 25.12 归档文件名自动发现架构。工作流核对下载内容的 SHA-256，生成签名后的 `packages.adb` 和供 `owut` 读取的 `index.json`。校验失败时，线上继续提供上一次成功发布的内容。GitHub 的定时任务可能延后，公开仓库连续 60 天无活动时也可能暂停定时运行。
 
 上游 APK 同步时保留原包内容和版本号。FM350 的 `aarch64_generic` 构建工作流每 30 分钟检查上游，仅在 APK 的 SHA-256 变化时编译。蓝牙包组的定时构建已暂停，软件源继续提供已发布的版本。构建记录附有源码和 SDK 信息。许可证随各上游项目发布，对应源码和构建记录可从[软件源首页](https://aethersailor.github.io/openwrt-package-feed/)查阅。

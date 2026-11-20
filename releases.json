@@ -26,47 +26,6 @@
       "checksums": "checksums.txt"
     },
     {
-      "repository": "nikkinikki-org/OpenWrt-nikki",
-      "apk_archive_pattern": "nikki_(?P<arch>[a-z0-9][a-z0-9_.-]+)-openwrt-25\\.12\\.tar\\.gz"
-    },
-    {
-      "repository": "nikkinikki-org/OpenWrt-momo",
-      "apk_archive_pattern": "momo_(?P<arch>[a-z0-9][a-z0-9_.-]+)-openwrt-25\\.12\\.tar\\.gz"
-    },
-    {
-      "repository": "CHKayanami/OpenWrt-nikki-rs",
-      "apk_archive_pattern": "nikki-rs_(?P<arch>[a-z0-9][a-z0-9_.-]+)-openwrt-25\\.12\\.tar\\.gz"
-    },
-    {
-      "repository": "fw876/helloworld",
-      "release_tag_pattern": "v[0-9]+\\.[0-9]+",
-      "apk_release_fallback": true
-    },
-    {
-      "repository": "Openwrt-Passwall/openwrt-passwall2",
-      "release_tag_pattern": "[0-9]+\\.[0-9]+\\.[0-9]+-[0-9]+"
-    },
-    {
-      "repository": "kenzok8/openwrt-clashoo",
-      "feed_subdirectory": "clashoo",
-      "apk_asset_pattern": ".+?-(?P<apk_arch>[a-z0-9]+_[a-z0-9_-]+)\\.apk"
-    },
-    {
-      "repository": "fantastic-packages/releases",
-      "package": "luci-app-fchomo",
-      "package_branch": "gh-pages",
-      "package_directory": "25.12/packages/x86_64/luci",
-      "apk_asset_pattern": "(?P<name>luci-app-fchomo|luci-i18n-fchomo-[a-z0-9_-]+)-(?P<version>[0-9][0-9A-Za-z_.+~-]*)\\.apk"
-    },
-    {
-      "repository": "77160860/luci-app-sing",
-      "release_tag_pattern": "sing|v[0-9]+\\.[0-9]+(?:\\.[0-9]+)?"
-    },
-    {
-      "repository": "77160860/luci-app-meta",
-      "release_tag_pattern": "meta|v[0-9]+\\.[0-9]+(?:\\.[0-9]+)?"
-    },
-    {
       "repository": "Aethersailor/xgp-v3-screen",
       "apk_arch": "aarch64_generic",
       "checksums": "SHA256SUMS",
@@ -129,9 +88,6 @@
     },
     {
       "repository": "OppsError404/luci-app-easy-setup"
-    },
-    {
-      "repository": "meow-rs/meow-rs"
     },
     {
       "repository": "4IceG/luci-app-modemdata",
