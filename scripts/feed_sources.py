@@ -166,8 +166,7 @@ def resolve_release(source, *, previous=None, feed_url=None):
     if not is_stable_release(data, tag_pattern):
         raise ValueError(f"{repo} {tag} is not a stable release")
 
-    package_field = "packages" if "packages" in source else "package"
-    release = {"repository": repo, package_field: source[package_field], "tag": tag}
+    release = {"repository": repo, "tag": tag}
     if "apk_archive_pattern" in source:
         assets = uploaded_assets(data)
         apks, archive_state = bundled_apks(source, assets, previous or {}, feed_url)
@@ -292,16 +291,14 @@ def select_release_apks(source, tag, assets, apk_assets):
                 raise ValueError(f"{repo} {tag} checksum differs from GitHub for {name}")
 
     if pattern := source.get("apk_asset_pattern"):
-        selected = {
-            key: {**asset, "apk_identity": match.groupdict()}
+        apk_assets = {
+            key: {**asset, **match.groupdict()}
             for key, asset in apk_assets.items() if (match := re.fullmatch(pattern, asset["name"]))
         }
-        if not selected:
+        if not apk_assets:
             raise ValueError(f"{repo} {tag} has no APK assets matching {pattern}")
-        for arch in source.get("apk_archive_architectures", []):
-            names = {asset["apk_identity"]["name"] for asset in selected.values() if asset["apk_arch"] == arch}
-            if missing := set(source["packages"]) - names:
-                raise ValueError(f"{repo} {tag} is missing APKs for {arch}: {sorted(missing)}")
-        return {key: asset["digest"] for key, asset in selected.items()}, list(selected.values())
 
-    return checksums, list(apk_assets.values())
+    unique = {}
+    for key, asset in sorted(apk_assets.items()):
+        unique.setdefault((asset["digest"], asset.get("apk_arch")), (key, asset))
+    return {key: asset["digest"] for key, asset in unique.values()}, [asset for _, asset in unique.values()]

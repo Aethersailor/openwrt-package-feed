@@ -89,16 +89,17 @@ def main():
     catalog = json.loads((Path(__file__).resolve().parents[1] / "releases.json").read_text(encoding="utf-8"))
     source = next(source for source in catalog["releases"] if source["repository"] == UPSTREAM)
     release, assets = resolve_release(source)
-    (asset,) = assets
+    for asset in assets:
+        if match := re.fullmatch(r"luci-app-fm350-([0-9.]+-r[0-9]+)\.apk", asset["name"]):
+            break
+    else:
+        raise ValueError(f"No {PACKAGE} APK in upstream release {release['tag']}")
     digest = asset["digest"]
     build_tag = TAG_PREFIX + digest[7:]
     if (build := latest_build()) and build["tag_name"] == build_tag:
         print(f"Upstream {asset['name']} is already built for {ARCH}.")
         return
 
-    match = re.fullmatch(r"luci-app-fm350-([0-9.]+-r[0-9]+)\.apk", asset["name"])
-    if not match:
-        raise ValueError(f"Unexpected upstream APK name: {asset['name']}")
     version = match[1]
     commit, run_url = source_commit(release["tag"], asset, version)
     info = {

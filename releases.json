@@ -2,31 +2,21 @@
   "releases": [
     {
       "repository": "Aethersailor/SubConverter-Extended",
-      "package": "subconverter-extended",
       "checksums": "SHA256SUMS"
     },
     {
       "repository": "Aethersailor/Rule-Bot-Client",
-      "package": "luci-app-rule-bot-client",
       "checksums": "openwrt-checksums.txt"
     },
     {
       "repository": "anothaDev/luci-theme-vantage",
-      "packages": [
-        "luci-theme-vantage",
-        "luci-app-vantage",
-        "luci-i18n-vantage-theme-zh-cn",
-        "luci-i18n-vantage-zh-cn"
-      ],
       "checksums": "SHA256SUMS"
     },
     {
-      "repository": "eamonxg/luci-theme-aurora",
-      "package": "luci-theme-aurora"
+      "repository": "eamonxg/luci-theme-aurora"
     },
     {
-      "repository": "itsmaiGe/luci-theme-7dollar",
-      "package": "luci-theme-7dollar"
+      "repository": "itsmaiGe/luci-theme-7dollar"
     },
     {
       "repository": "vernesong/OpenClash",
@@ -37,43 +27,32 @@
     },
     {
       "repository": "nikkinikki-org/OpenWrt-nikki",
-      "packages": ["nikki", "luci-app-nikki", "luci-i18n-nikki-zh-cn", "mihomo-meta"],
       "apk_archive_pattern": "nikki_{arch}-openwrt-25\\.12\\.tar\\.gz",
-      "apk_archive_architectures": ["aarch64_cortex-a53", "aarch64_cortex-a76", "aarch64_generic", "x86_64"],
-      "apk_asset_pattern": "(?P<name>nikki|luci-app-nikki|luci-i18n-nikki-zh-cn|mihomo-meta)-(?P<version>[0-9][0-9A-Za-z_.+~-]*)\\.apk"
+      "apk_archive_architectures": ["aarch64_cortex-a53", "aarch64_cortex-a76", "aarch64_generic", "x86_64"]
     },
     {
       "repository": "nikkinikki-org/OpenWrt-momo",
-      "packages": ["momo", "luci-app-momo", "luci-i18n-momo-zh-cn"],
       "apk_archive_pattern": "momo_{arch}-openwrt-25\\.12\\.tar\\.gz",
-      "apk_archive_architectures": ["aarch64_cortex-a53", "aarch64_cortex-a76", "aarch64_generic", "x86_64"],
-      "apk_asset_pattern": "(?P<name>momo|luci-app-momo|luci-i18n-momo-zh-cn)-(?P<version>[0-9][0-9A-Za-z_.+~-]*)\\.apk"
+      "apk_archive_architectures": ["aarch64_cortex-a53", "aarch64_cortex-a76", "aarch64_generic", "x86_64"]
     },
     {
       "repository": "CHKayanami/OpenWrt-nikki-rs",
-      "packages": ["nikki-rs", "luci-app-nikki-rs", "luci-i18n-nikki-rs-zh-cn", "clash-rs"],
       "apk_archive_pattern": "nikki-rs_{arch}-openwrt-25\\.12\\.tar\\.gz",
-      "apk_archive_architectures": ["aarch64_cortex-a53", "aarch64_cortex-a76", "aarch64_generic", "x86_64"],
-      "apk_asset_pattern": "(?P<name>nikki-rs|luci-app-nikki-rs|luci-i18n-nikki-rs-zh-cn|clash-rs)-(?P<version>[0-9][0-9A-Za-z_.+~-]*)\\.apk"
+      "apk_archive_architectures": ["aarch64_cortex-a53", "aarch64_cortex-a76", "aarch64_generic", "x86_64"]
     },
     {
       "repository": "fw876/helloworld",
-      "packages": ["luci-app-ssr-plus", "luci-i18n-ssr-plus-zh-cn"],
       "release_tag_pattern": "v[0-9]+\\.[0-9]+",
-      "apk_release_fallback": true,
-      "apk_asset_pattern": "(?P<name>luci-app-ssr-plus|luci-i18n-ssr-plus-zh-cn)-[0-9][0-9A-Za-z_.+~-]*\\.apk"
+      "apk_release_fallback": true
     },
     {
       "repository": "Openwrt-Passwall/openwrt-passwall2",
-      "packages": ["luci-app-passwall2", "luci-i18n-passwall2-zh-cn"],
-      "release_tag_pattern": "[0-9]+\\.[0-9]+\\.[0-9]+-[0-9]+",
-      "apk_asset_pattern": "(?P<name>luci-app-passwall2|luci-i18n-passwall2-zh-cn)-(?P<version>[0-9][0-9A-Za-z_.+~-]*)\\.apk"
+      "release_tag_pattern": "[0-9]+\\.[0-9]+\\.[0-9]+-[0-9]+"
     },
     {
       "repository": "kenzok8/openwrt-clashoo",
-      "packages": ["clashoo", "luci-app-clashoo", "luci-i18n-clashoo-zh-cn"],
       "feed_subdirectory": "clashoo",
-      "apk_asset_pattern": "(?P<name>clashoo|luci-app-clashoo|luci-i18n-clashoo-zh-cn)-(?P<version>[0-9][0-9A-Za-z_.+~-]*)-(?P<arch>aarch64_cortex-a53|aarch64_generic|x86_64)\\.apk"
+      "apk_asset_pattern": ".+?-(?P<apk_arch>[a-z0-9]+_[a-z0-9_-]+)\\.apk"
     },
     {
       "repository": "fantastic-packages/releases",
@@ -84,121 +63,86 @@
     },
     {
       "repository": "77160860/luci-app-sing",
-      "package": "luci-app-sing",
-      "release_tag_pattern": "sing|v[0-9]+\\.[0-9]+(?:\\.[0-9]+)?",
-      "apk_asset_pattern": "(?P<name>luci-app-sing)[-_](?P<version>[0-9][0-9A-Za-z.+~-]*)\\.apk"
+      "release_tag_pattern": "sing|v[0-9]+\\.[0-9]+(?:\\.[0-9]+)?"
     },
     {
       "repository": "77160860/luci-app-meta",
-      "package": "luci-app-meta",
-      "release_tag_pattern": "meta|v[0-9]+\\.[0-9]+(?:\\.[0-9]+)?",
-      "apk_asset_pattern": "(?P<name>luci-app-meta)-(?P<version>[0-9][0-9A-Za-z.+~-]*)\\.apk"
+      "release_tag_pattern": "meta|v[0-9]+\\.[0-9]+(?:\\.[0-9]+)?"
     },
     {
       "repository": "Aethersailor/xgp-v3-screen",
-      "packages": ["luci-app-xgp-v3-screen", "luci-i18n-xgp-v3-screen-zh-cn"],
-      "apk_asset_pattern": "(?P<name>luci-app-xgp-v3-screen|luci-i18n-xgp-v3-screen-zh-cn)-(?P<version>[0-9][0-9.r-]*)\\.apk",
       "apk_arch": "aarch64_generic",
       "checksums": "SHA256SUMS",
       "read_token_env": "XGP_RELEASE_READ_TOKEN"
     },
     {
       "repository": "LianXia233/luci-app-fm350",
-      "package": "luci-app-fm350",
       "checksums": "SHA256SUMS",
       "versioned_releases": true
     },
     {
       "repository": "ciwga/luci-app-argononev3-fancontrol",
-      "package": "luci-app-argononev3-fancontrol",
       "checksums": "checksums.txt"
     },
     {
-      "repository": "Kodo-kakaku/luci-app-gpoint",
-      "package": "luci-app-gpoint"
+      "repository": "Kodo-kakaku/luci-app-gpoint"
     },
     {
       "repository": "FAN789/luci-app-h5000m-fancontrol",
-      "packages": ["luci-app-h5000m-fancontrol", "luci-i18n-h5000m-fancontrol-zh-cn"],
       "checksums": "SHA256SUMS",
-      "apk_asset_pattern": "(?P<name>luci-app-h5000m-fancontrol|luci-i18n-h5000m-fancontrol-zh-cn)-(?P<version>[0-9][0-9.r-]*)\\.apk",
       "apk_arch": "aarch64_cortex-a53"
     },
     {
       "repository": "LianXia233/luci-app-airpi3000m-fancontrol",
-      "package": "luci-app-airpi-fancontrol",
       "release_tag_pattern": "v[0-9]{14}",
-      "apk_asset_pattern": "(?P<name>luci-app-airpi-fancontrol)-(?P<version>[0-9][0-9.r-]*)_openwrt-25\\.12\\.apk",
+      "apk_asset_pattern": ".+_openwrt-25\\.12\\.apk",
       "apk_arch": "aarch64_cortex-a53"
     },
     {
       "repository": "FAN789/luci-app-mt5700m",
-      "packages": ["luci-app-mt5700m", "luci-i18n-mt5700m-zh-cn", "mt5700m-transport"],
       "apk_archive_pattern": "mt5700m-v[0-9.]+-openwrt-25\\.12\\.[0-9]+-mediatek-filogic\\.tar\\.gz",
-      "apk_asset_pattern": "(?P<name>luci-app-mt5700m|luci-i18n-mt5700m-zh-cn|mt5700m-transport)-(?P<version>[0-9][0-9.r-]*)\\.apk",
       "apk_arch": "aarch64_cortex-a53"
     },
     {
       "repository": "sbwml/luci-app-mosdns",
-      "packages": ["mosdns", "luci-app-mosdns", "luci-i18n-mosdns-zh-cn", "geo2txt"],
       "apk_archive_pattern": "{arch}-openwrt-25\\.12\\.tar\\.gz",
-      "apk_archive_architectures": ["aarch64_cortex-a53", "aarch64_cortex-a76", "aarch64_generic", "x86_64"],
-      "apk_asset_pattern": "(?P<name>mosdns|luci-app-mosdns|luci-i18n-mosdns-zh-cn|geo2txt)-(?P<version>[0-9][0-9A-Za-z_.+~-]*)\\.apk"
+      "apk_archive_architectures": ["aarch64_cortex-a53", "aarch64_cortex-a76", "aarch64_generic", "x86_64"]
     },
     {
-      "repository": "timsaya/openwrt-bandix",
-      "package": "bandix",
-      "apk_asset_pattern": "(?P<name>bandix)-(?P<version>[0-9][0-9A-Za-z.+~-]*)_(?:aarch64_cortex-a53|aarch64_cortex-a76|aarch64_generic|x86_64)\\.apk"
+      "repository": "timsaya/openwrt-bandix"
     },
     {
-      "repository": "timsaya/luci-app-bandix",
-      "packages": ["luci-app-bandix", "luci-i18n-bandix-zh-cn"],
-      "apk_asset_pattern": "(?P<name>luci-app-bandix|luci-i18n-bandix-zh-cn)-[0-9][0-9A-Za-z.+~-]*_all\\.apk"
+      "repository": "timsaya/luci-app-bandix"
     },
     {
-      "repository": "YusDyr/luci-app-trafficctl",
-      "packages": ["luci-app-trafficctl", "trafficctl", "luci-i18n-trafficctl-zh-cn"],
-      "apk_asset_pattern": "(?P<name>luci-app-trafficctl|trafficctl|luci-i18n-trafficctl-zh-cn)_[0-9][0-9A-Za-z.+~-]*_noarch\\.apk"
+      "repository": "YusDyr/luci-app-trafficctl"
     },
     {
-      "repository": "smthdagg/luci-app-wificalling-gateway",
-      "package": "luci-app-wificalling-gateway"
+      "repository": "smthdagg/luci-app-wificalling-gateway"
     },
     {
-      "repository": "lucas-albers-lz4/fwlive",
-      "packages": ["luci-app-fwlive", "luci-i18n-fwlive-zh-cn"],
-      "apk_asset_pattern": "(?P<name>luci-app-fwlive|luci-i18n-fwlive-zh-cn)-(?P<version>[0-9][0-9A-Za-z.+~-]*)\\.apk"
+      "repository": "lucas-albers-lz4/fwlive"
     },
     {
-      "repository": "LianXia233/luci-app-netmonitor",
-      "packages": ["luci-app-netmonitor", "luci-i18n-netmonitor-zh-cn"],
-      "apk_asset_pattern": "(?P<name>luci-app-netmonitor|luci-i18n-netmonitor-zh-cn)-[0-9][0-9A-Za-z.+~-]*\\.apk"
+      "repository": "LianXia233/luci-app-netmonitor"
     },
     {
       "repository": "FAN789/luci-app-h5000m-netmode",
-      "packages": ["luci-app-h5000m-netmode", "luci-i18n-h5000m-netmode-zh-cn"],
       "checksums": "SHA256SUMS",
-      "apk_asset_pattern": "(?P<name>luci-app-h5000m-netmode|luci-i18n-h5000m-netmode-zh-cn)-(?P<version>[0-9][0-9A-Za-z.+~-]*)\\.apk",
       "apk_arch": "aarch64_cortex-a53"
     },
     {
-      "repository": "OppsError404/luci-app-easy-setup",
-      "package": "luci-app-easy-setup"
+      "repository": "OppsError404/luci-app-easy-setup"
     },
     {
-      "repository": "meow-rs/meow-rs",
-      "packages": ["meow", "luci-app-meow"],
-      "apk_asset_pattern": "(?P<name>meow|luci-app-meow)_(?P<version>[0-9][0-9A-Za-z.+~-]*)_(?:all|(?:aarch64_cortex-a53|aarch64_cortex-a76|aarch64_generic|x86_64))\\.apk"
+      "repository": "meow-rs/meow-rs"
     },
     {
       "repository": "4IceG/luci-app-modemdata",
-      "packages": ["modemdata", "luci-app-modemdata", "luci-i18n-modemdata-zh-cn"],
-      "release_tag_pattern": "v?[0-9]+\\.[0-9]+\\.[0-9]+(?:-r[0-9]+)?",
-      "apk_asset_pattern": "(?P<name>modemdata|luci-app-modemdata|luci-i18n-modemdata-zh-cn)-(?P<version>[0-9][0-9A-Za-z.+~-]*)\\.apk"
+      "release_tag_pattern": "v?[0-9]+\\.[0-9]+\\.[0-9]+(?:-r[0-9]+)?"
     },
     {
       "repository": "byizmysh/SWFence",
-      "packages": ["swfence", "luci-app-swfence"],
       "checksums": "SHA256SUMS"
     }
   ]

@@ -27,7 +27,7 @@ PACKAGE_ROOT = Path("immortalwrt/apk/packages")
 
 
 def package_names(release):
-    return release["packages"] if "packages" in release else [release["package"]]
+    return [release["package"]] if "package" in release else release.get("packages", [])
 
 
 def published_state():
@@ -60,33 +60,32 @@ def stage_package(site, release, asset, source, raw):
     temporary = Path(staged.name)
     package = json.loads(apk(site, "adbdump", "--format", "json", f"/feed/.incoming/{temporary.name}"))["info"]
     name, version, arch = package["name"], package["version"], package["arch"]
-    if name not in package_names(release):
+    expected_names = package_names(release)
+    if expected_names and name not in expected_names:
         raise ValueError(f"Unexpected package identity in {asset['name']}: {name} {version}")
-    filename = f"{name}-{version}.apk"
+    filename = Path(f"{name}-{version}.apk").name
+    target_arch = asset.get("apk_arch") or source.get("apk_arch", arch)
     if "build_architectures" in release:
         target_arch, _, asset_filename = asset["name"].partition("--")
-        if target_arch not in release["build_architectures"] or asset_filename != filename or arch not in ("noarch", target_arch):
+        if target_arch not in release["build_architectures"] or asset_filename != filename:
             raise ValueError(f"Unexpected build identity in {asset['name']}: {name} {version} {arch}")
-        arch = target_arch
     elif identity := asset.get("apk_identity"):
-        target_arch = asset.get("apk_arch") or identity.get("arch") or source.get("apk_arch", arch)
-        expected_version = identity.get("version")
-        if (
-            name != identity["name"]
-            or (expected_version is not None and version != expected_version)
-            or arch not in ("noarch", target_arch)
-        ):
+        if name != identity["name"] or version != identity["version"]:
             raise ValueError(f"Unexpected release asset identity in {asset['name']}: {name} {version} {arch}")
-        arch = target_arch
-    else:
+    elif expected_names:
         tag_version = VERSION_TAG.fullmatch(release["tag"])[1]
         version_pattern = re.escape(tag_version)
         if "-r" not in tag_version and "package_commit" not in release:
             version_pattern += r"-r\d+"
         if not re.fullmatch(version_pattern, version):
             raise ValueError(f"Unexpected package version in {asset['name']}: {version}")
-    if not re.fullmatch(r"[a-z0-9][a-z0-9_.-]+", arch) or release.get("architecture", arch) != arch:
+    if (
+        not re.fullmatch(r"[a-z0-9][a-z0-9_.-]+", target_arch)
+        or arch not in ("noarch", target_arch)
+        or release.get("architecture", target_arch) != target_arch
+    ):
         raise ValueError(f"Invalid architecture in {asset['name']}: {arch}")
+    arch = target_arch
 
     directory = site / PACKAGE_ROOT / release.get("feed_subdirectory", "") / arch
     directory.mkdir(parents=True, exist_ok=True)

@@ -129,7 +129,7 @@ LuCI Attended Sysupgrade 和 `owut` 共用 `attendedsysupgrade.server.url`。Ope
 <details>
 <summary>Nikki · <code>luci-app-nikki</code></summary>
 
-在 LuCI 中管理 Mihomo 透明代理。同步上游 OpenWrt 25.12 归档中的 `nikki`、LuCI、简体中文包和稳定版内核 `mihomo-meta`，覆盖 `aarch64_cortex-a53`、`aarch64_cortex-a76`、`aarch64_generic` 和 `x86_64`。[上游发布](https://github.com/nikkinikki-org/OpenWrt-nikki/releases)
+在 LuCI 中管理 Mihomo 透明代理。同步上游 OpenWrt 25.12 归档中的全部 APK，包括 `nikki`、LuCI、语言包、`mihomo-meta` 和 `mihomo-alpha`，覆盖 `aarch64_cortex-a53`、`aarch64_cortex-a76`、`aarch64_generic` 和 `x86_64`。[上游发布](https://github.com/nikkinikki-org/OpenWrt-nikki/releases)
 
 </details>
 
@@ -164,7 +164,7 @@ LuCI Attended Sysupgrade 和 `owut` 共用 `attendedsysupgrade.server.url`。Ope
 <details>
 <summary>Clashoo · <code>luci-app-clashoo</code></summary>
 
-在 LuCI 中管理代理订阅及透明代理。同步上游 `clashoo`、LuCI 和简体中文包，覆盖 `aarch64_cortex-a53`、`aarch64_generic` 和 `x86_64`。Clashoo 自带 Mihomo，会占用 `/usr/bin/mihomo`。添加本源公钥后，可通过独立的 `@clashoo` 索引安装。[上游发布](https://github.com/kenzok8/openwrt-clashoo/releases)
+在 LuCI 中管理代理订阅及透明代理。同步上游 `clashoo`、LuCI 和语言包。各架构见软件源首页的独立索引。Clashoo 自带 Mihomo，会占用 `/usr/bin/mihomo`。添加本源公钥后，可通过独立的 `@clashoo` 索引安装。[上游发布](https://github.com/kenzok8/openwrt-clashoo/releases)
 
 ```sh
 base='https://aethersailor.github.io/openwrt-package-feed'
@@ -262,7 +262,7 @@ LuCI 主题与仪表盘可分别安装。主题和仪表盘的简体中文包分
 <details>
 <summary>AirPi AP3000M 风扇控制 · <code>luci-app-airpi-fancontrol</code></summary>
 
-在 LuCI 中设置 AP3000M 的风扇曲线。同步上游 OpenWrt 25.12 应用 APK。搭载 8 GB eMMC 的型号使用硬件 PWM，搭载 16 GB eMMC 的型号需要与固件内核匹配的 `kmod-airpi-gpio-fan`，请按上游说明确认驱动。[上游仓库](https://github.com/LianXia233/luci-app-airpi3000m-fancontrol)
+在 LuCI 中设置 AP3000M 的风扇曲线。同步上游 OpenWrt 25.12 的应用和 `kmod-airpi-gpio-fan`。搭载 8 GB eMMC 的型号使用硬件 PWM，搭载 16 GB eMMC 的型号需要与固件内核匹配的驱动，请按上游说明确认。[上游仓库](https://github.com/LianXia233/luci-app-airpi3000m-fancontrol)
 
 </details>
 
@@ -276,7 +276,7 @@ LuCI 主题与仪表盘可分别安装。主题和仪表盘的简体中文包分
 <details>
 <summary>MosDNS · <code>mosdns</code>、<code>luci-app-mosdns</code></summary>
 
-DNS 转发服务及其 LuCI 管理界面。同步上游 OpenWrt 25.12 正式发布的本体、LuCI、简体中文包 `luci-i18n-mosdns-zh-cn` 和依赖 `geo2txt`。`v2ray-geoip` 和 `v2ray-geosite` 由固件的官方源提供。[上游仓库](https://github.com/sbwml/luci-app-mosdns)
+DNS 转发服务及其 LuCI 管理界面。同步上游 OpenWrt 25.12 归档中的全部 APK，包括 LuCI、简体中文包和 `geo2txt`、`v2ray-geoip`、`v2ray-geosite`。[上游仓库](https://github.com/sbwml/luci-app-mosdns)
 
 </details>
 
@@ -290,7 +290,7 @@ DNS 转发服务及其 LuCI 管理界面。同步上游 OpenWrt 25.12 正式发�
 <details>
 <summary>Traffic Control · <code>luci-app-trafficctl</code></summary>
 
-按设备查看流量，设置限速、流量整形和联网规则。同步 LuCI 界面、服务 `trafficctl` 和简体中文包。[上游仓库](https://github.com/YusDyr/luci-app-trafficctl)
+按设备查看流量，设置限速、流量整形和联网规则。同步 LuCI 界面、服务 `trafficctl`、简体中文包和 Telegram 扩展。[上游仓库](https://github.com/YusDyr/luci-app-trafficctl)
 
 </details>
 
@@ -366,6 +366,6 @@ DNS 转发服务及其 LuCI 管理界面。同步上游 OpenWrt 25.12 正式发�
 
 ## 同步与发布
 
-[软件源发布工作流](.github/workflows/publish-feed.yml) 每 30 分钟检查一次上游，也可手动运行。工作流比较 GitHub Release 提供的归档 SHA-256，同一个标签下替换的归档也会重新下载。重新发布时，校验值相同的归档复用线上已校验的 APK。工作流核对 APK 的 SHA-256、包名、版本和架构，并生成签名后的 `packages.adb` 及供 `owut` 读取的 `index.json`。校验失败时，线上继续提供上一次成功发布的内容。GitHub 的定时任务可能延后，公开仓库连续 60 天无活动时也可能暂停定时运行。
+[软件源发布工作流](.github/workflows/publish-feed.yml) 每 30 分钟检查一次上游，也可手动运行。工作流比较 GitHub Release 提供的归档 SHA-256，同一个标签下替换的归档也会重新下载。重新发布时，校验值相同的归档复用线上已校验的 APK。工作流收录所配置 Release 或归档中的全部适用 APK，并按包内的包名、版本和架构生成索引。归档按配置的固件版本和架构选取。工作流核对下载内容的 SHA-256，生成签名后的 `packages.adb` 和供 `owut` 读取的 `index.json`。校验失败时，线上继续提供上一次成功发布的内容。GitHub 的定时任务可能延后，公开仓库连续 60 天无活动时也可能暂停定时运行。
 
 上游 APK 同步时保留原包内容和版本号。FM350 的 `aarch64_generic` 构建工作流每 30 分钟检查上游，仅在 APK 的 SHA-256 变化时编译。蓝牙包组的定时构建已暂停，软件源继续提供已发布的版本。构建记录附有源码和 SDK 信息。许可证随各上游项目发布，对应源码和构建记录可从[软件源首页](https://aethersailor.github.io/openwrt-package-feed/)查阅。
