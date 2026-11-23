@@ -45,9 +45,13 @@ def resolve_build():
     ):
         raise ValueError(f"Invalid owut build identity in {build['tag_name']}")
 
-    name = f"owut-{version}.apk"
-    asset = assets[name]
-    if info["apk_digest"] != asset["digest"]:
+    # GitHub normalizes characters such as "~" in uploaded asset names.
+    asset = next(
+        (asset for asset in assets.values()
+         if asset["name"].endswith(".apk") and asset["digest"] == info["apk_digest"]),
+        None,
+    )
+    if asset is None:
         raise ValueError(f"owut APK digest differs from {build['tag_name']}")
 
     release = {
@@ -55,7 +59,7 @@ def resolve_build():
         "package": "owut",
         "tag": f"v{version}",
         "build_version": version,
-        "assets": {name: asset["digest"]},
+        "assets": {asset["name"]: asset["digest"]},
         "build_tag": build["tag_name"],
         "build_source": f"https://github.com/efahl/owut/tree/{info['source_commit']}",
         "architecture": "noarch",
