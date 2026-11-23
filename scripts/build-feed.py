@@ -19,6 +19,7 @@ from urllib.error import HTTPError
 from bluetooth import resolve_build as resolve_bluetooth_build
 from feed_sources import VERSION_TAG, download, resolve_release, verified_asset
 from fm350 import resolve_build as resolve_fm350_build
+from owut import resolve_build as resolve_owut_build
 
 
 APK_IMAGE = "mirror.gcr.io/library/alpine@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b"
@@ -81,6 +82,9 @@ def stage_package(site, release, asset, source, raw):
         target_arch, _, asset_filename = asset["name"].partition("--")
         if target_arch not in release["build_architectures"] or asset_filename != filename:
             raise ValueError(f"Unexpected build identity in {asset['name']}: {name} {version} {arch}")
+    elif "build_version" in release:
+        if version != release["build_version"]:
+            raise ValueError(f"Unexpected package version in {asset['name']}: {version}")
     elif expected_names:
         tag_version = VERSION_TAG.fullmatch(release["tag"])[1]
         version_pattern = re.escape(tag_version)
@@ -256,7 +260,7 @@ def main():
         resolve_release(source, previous=previous_archives.get(source["repository"]), feed_url=PUBLISHED_FEED)
         for source in sources
     ]
-    for resolve_build in (resolve_fm350_build, resolve_bluetooth_build):
+    for resolve_build in (resolve_fm350_build, resolve_bluetooth_build, resolve_owut_build):
         if build := resolve_build():
             resolved.append(build)
             sources.append({"repository": build[0]["repository"]})

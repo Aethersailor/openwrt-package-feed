@@ -1,0 +1,52 @@
+--- a/files/owut
++++ b/files/owut
+@@ -320,19 +320,6 @@
+ 		L.bug("Fatal error in sha256.%s:\n%.2J\n", where, data);
+ 	},
+ };
+-
+-//------------------------------------------------------------------------------
+-
+-function sysupgrade(file, check, options)
+-{
+-	// When sysupgrade performs the upgrade, it returns with shell status
+-	// of '10', so uc_ubus_call raises an error.  '--test' is fine, it
+-	// returns proper status.
+-
+-	return check
+-		? ubus.run("sysupgrade", ...options, file)
+-		: ubus.raw_run("sysupgrade", ...(options ?? []), file);
+-}
+ 
+ //------------------------------------------------------------------------------
+ 
+@@ -2143,7 +2130,7 @@
+ 		return false;
+ 	}
+ 
+-	result = sysupgrade(image, true, ["--test"]);
++	result = ubus.run("sysupgrade", "--test", image);
+ 	if (result?.code == 0) {
+ 		L.log(1, "  %s\n", join("\n  ", split(trim(result.stderr), "\n")));
+ 	}
+@@ -2365,14 +2352,12 @@
+ 
+ function install()
+ {
+-	// Run sysupgrade to install the image.
+-	// Probably need some more options reflected from sysupgrade itself.
+-	// '-n' = discard config comes to mind first, maybe '-f' = force, too.
+-
+-	run_pre_install_hook();  // Run user's pre-install hook.
+-
+-	sysupgrade(options.image, false);
+-	L.log(0, "Installing %s and rebooting...\n", options.image);
++	run_pre_install_hook();
++	L.log(0, "Starting sysupgrade with %s...\n", options.image);
++
++	let status = system(["/sbin/sysupgrade", options.image]);
++	if (status != 0)
++		L.die("sysupgrade failed with status %d\n", status);
+ }
+ 
+ //------------------------------------------------------------------------------
