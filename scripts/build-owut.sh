@@ -32,18 +32,18 @@ grep -Fx "PKG_RELEASE:=$package_release" "$sdk/package/owut/Makefile"
 cp "$repo"/patches/owut/*.patch "$sdk/package/owut/patches/"
 
 cd "$sdk"
-./scripts/feeds update packages luci
-./scripts/feeds install attendedsysupgrade-common
+./scripts/feeds update base packages luci
+./scripts/feeds install attendedsysupgrade-common rpcd ucode
 cat > .config <<'EOF'
 CONFIG_TARGET_x86=y
 CONFIG_TARGET_x86_64=y
-CONFIG_PACKAGE_owut=m
+CONFIG_PACKAGE_owut=y
 # CONFIG_ALL is not set
 # CONFIG_ALL_KMODS is not set
 # CONFIG_ALL_NONSHARED is not set
 EOF
 make defconfig
-grep -Fx 'CONFIG_PACKAGE_owut=m' .config
+grep -Fx 'CONFIG_PACKAGE_owut=y' .config
 make package/owut/compile -j"$(nproc)" V=s
 apk_path=$(find bin -type f -name "$expected")
 test -f "$apk_path"
