@@ -78,7 +78,7 @@ def main():
     fields = dict(re.findall(r"^(PKG_SOURCE_DATE|PKG_SOURCE_VERSION|PKG_RELEASE):=(\S+)$", recipe, re.MULTILINE))
     date = fields["PKG_SOURCE_DATE"].replace("-", ".")
     source_commit = fields["PKG_SOURCE_VERSION"]
-    package_release = int(fields["PKG_RELEASE"]) + 1
+    package_release = int(fields["PKG_RELEASE"]) + 2
     version = f"{date}~{source_commit[:8]}-r{package_release}"
     if not VERSION.fullmatch(version) or not re.fullmatch(r"[0-9a-f]{40}", source_commit):
         raise ValueError("Unrecognized upstream owut version")

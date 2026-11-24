@@ -72,7 +72,7 @@ jobs:
           BUILD_TAG: ${{ needs.build.outputs.tag }}
           VERSION: ${{ needs.build.outputs.version }}
         run: |
-          jq -r '"Upstream source https://github.com/efahl/owut/tree/\(.source_commit)\n\nDirect sysupgrade call and install failure reporting. See build-info.json for build provenance."' \
+          jq -r '"Upstream source https://github.com/efahl/owut/tree/\(.source_commit)\n\nDirect sysupgrade call, install failure reporting and revision-scoped libubox compatibility. See build-info.json for build provenance."' \
             dist/build-info.json > "$RUNNER_TEMP/owut-notes.md"
           gh release create "$BUILD_TAG" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --latest=false \
             --title "owut $VERSION" --notes-file "$RUNNER_TEMP/owut-notes.md" \
