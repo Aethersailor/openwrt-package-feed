@@ -45,7 +45,7 @@ CONFIG_PACKAGE_owut=y
 EOF
 make defconfig
 grep -Fx 'CONFIG_PACKAGE_owut=y' .config
-make package/owut/compile -j"$(nproc)" V=s
+make -C package/owut TOPDIR="$sdk" compile V=s
 apk_path=$(find bin -type f -name "$expected")
 test -f "$apk_path"
 cp "$apk_path" "$output/$expected"
