@@ -29,7 +29,7 @@
  	if (result?.code == 0) {
  		L.log(1, "  %s\n", join("\n  ", split(trim(result.stderr), "\n")));
  	}
-@@ -2365,14 +2352,17 @@
+@@ -2365,14 +2352,14 @@
  
  function install()
  {
@@ -44,10 +44,7 @@
 +	run_pre_install_hook();
 +	L.log(0, "Starting sysupgrade with %s...\n", options.image);
 +
-+	let command = ["/sbin/sysupgrade", options.image];
-+	if (getenv("OWUT_OFFICE_LIBUBOX_PRELOAD") == "1")
-+		command = ["/usr/bin/env", "-u", "LD_PRELOAD", "-u", "OWUT_OFFICE_LIBUBOX_PRELOAD", ...command];
-+	let status = system(command);
++	let status = system(["/sbin/sysupgrade", options.image]);
 +	if (status == 10)
 +		L.log(0, "System bus disconnected during sysupgrade. Verify the firmware version after reconnecting.\n");
 +	else if (status != 0)

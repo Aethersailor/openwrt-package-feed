@@ -127,6 +127,13 @@ LuCI Attended Sysupgrade 和 `owut` 共用 `attendedsysupgrade.server.url`。Ope
 </details>
 
 <details>
+<summary>OWUT · <code>owut</code></summary>
+
+向 ASU 请求构建固件，并下载、校验和安装镜像。本仓库构建通用 `noarch` APK，安装阶段直接调用 `sysupgrade`，避免配置备份耗时触发 `rpcd` 超时。通过独立的 `curl` 进程处理 ASU 请求，避免 `owut` 进程因混用不同版本的 `libubox` 而卡在读取概览、查询构建状态或下载镜像。[上游仓库](https://github.com/efahl/owut) · [构建工作流](.github/workflows/build-owut.yml)
+
+</details>
+
+<details>
 <summary>Aurora · <code>luci-theme-aurora</code></summary>
 
 支持深色和浅色模式的 LuCI 主题。使用上游发布的通用 APK。[上游仓库](https://github.com/eamonxg/luci-theme-aurora)

@@ -1,0 +1,303 @@
+--- a/files/owut
++++ b/files/owut
+@@ -10,7 +10,6 @@
+ let PROG    = `${NAME}/${VERSION}`;
+ 
+ import * as uloop    from "uloop";
+-import * as uclient  from "uclient";
+ import * as fs       from "fs";
+ import * as mod_ubus from "ubus";
+ import * as ap       from "utils.argparse";
+@@ -359,20 +358,6 @@
+ 	},
+ };
+ 
+-function _get_ca_files()
+-{
+-	const cert_path = "/etc/ssl/certs";
+-	try {
+-		return fs.glob(`${cert_path}/*.crt`);
+-	}
+-	catch (error) {
+-		L.wrn("Could not access SSL certificates: %s\n", error);
+-		return [];
+-	}
+-}
+-
+-//------------------------------------------------------------------------------
+-
+ function getenv_ic(envar)
+ {
+ 	return getenv(envar) || getenv(uc(envar));
+@@ -402,155 +387,108 @@
+ 
+ //------------------------------------------------------------------------------
+ 
+-let _uc_uc = null;
+-let _uc_cb = null;
+-
+-function _get_uclient(url, dst_file)
+-{
+-	if (! _uc_uc) {
+-		_uc_cb = {
+-			url:         "",    // For error messages.
+-			dst_file:    "",    // Where to put result.
+-			output:      null,  // Handle for dst_file.
+-			rsp_headers: null,
+-
+-			_disconnect: (cb) => {
+-				if (cb.output) {
+-					cb.output.close();
+-					cb.output = null;
+-				}
+-				this.disconnect();
+-				uloop.end();
+-			},
+-
+-			header_done: (cb) => {
+-				cb.output = fs.open(cb.dst_file, "w");
+-				if (! cb.output) {
+-					L.err("opening %s: %s\n", cb.dst_file, fs.error());
+-					cb._disconnect(cb);
+-				}
+-				cb.rsp_headers = this.get_headers();
+-				cb.rsp_headers.status = this.status().status;
+-				cb.rsp_headers.content_length = int(cb.rsp_headers["content-length"] || 0);
+-				cb.rsp_headers.content_read = 0;
+-				if (! this.redirect(cb)) {
+-					L.log(1, "Redirected to %s...\n", cb.rsp_headers.location);
+-				}
+-			},
+-
+-			data_read: (cb) => {
+-				// uc.read returns null on eof.
+-				let n_read = 0;
+-				while ((n_read = cb.output.write(this.read() ?? "")) > 0) {
+-					cb.rsp_headers.content_read += n_read;
+-					if (options.progress_size && cb.rsp_headers.content_length > options.progress_size) {
+-						let pct_read = 100.0 * cb.rsp_headers.content_read / cb.rsp_headers.content_length;
+-						L.log(0, "Download progress: %5.1f%% %6.2f/%6.2f KB" + (L.stdout_is_pipe ? "\n" : "\r"),
+-							pct_read, cb.rsp_headers.content_read/1024.0, cb.rsp_headers.content_length/1024.0);
+-					}
+-				}
+-			},
+-
+-			data_eof: (cb) => {
+-				cb._disconnect(cb);
+-			},
+-
+-			error: (cb, code) => {
+-				L.err("uclient error code=%s\n  This could be due to the server being down or inaccessible, check\n  %s\n", code, cb.url);
+-				cb._disconnect(cb);
+-			},
+-		};
+-
+-		_uc_uc = uclient.new(url, null, _uc_cb);
+-
+-		if (! _uc_uc.ssl_init({ca_files: _get_ca_files()})) {
+-			L.die("owut uses ucode-mod-uclient, which requires an SSL library to function:\n" +
+-			"  Please install one of the libustream-*[ssl|tls] packages as well as\n" +
+-			"  one of the ca-bundle or ca-certificates packages.\n");
+-		}
+-	}
+-
+-	let proxy_url = get_proxy_url(url);
+-	if (! proxy_url)
+-		_uc_uc.set_url(url);
++let http_tmp;
++
++function cleanup_http()
++{
++	if (!http_tmp) return;
++
++	for (let name in ["headers", "body", "proxy"])
++		fs.unlink(http_tmp + "/" + name);
++	fs.rmdir(http_tmp);
++	http_tmp = null;
++}
++
++function response_headers(raw)
++{
++	let headers;
++	for (let line in split(raw, "\n")) {
++		let status = match(line, /^HTTP\/\S+\s+([0-9]{3})/);
++		if (status) {
++			headers = { status: int(status[1]) };
++			continue;
++		}
++		let field = match(line, /^([^:]+):\s*(.*)$/);
++		if (headers && field)
++			headers[lc(field[1])] = trim(field[2]);
++	}
++	return headers;
++}
++
++function _request(url, dst_file, params)
++{
++	let json_data = params?.json_data;
++	let type = json_data ? "POST" : (params?.type ?? "GET");
++	if (!(type in ["GET", "HEAD", "POST"]))
++		L.bug("Invalid request type '%s'\n", type);
++
++	http_tmp = fs.mkdtemp("/tmp/owut-http.XXXXXX");
++	if (!http_tmp) {
++		L.err("Cannot create an HTTP temporary directory: %s\n", fs.error());
++		return null;
++	}
++
++	let start = time();
++	let headers_file = http_tmp + "/headers";
++	let output = type == "HEAD" ? "/dev/null" : dst_file;
++	let args = [
++		"/usr/bin/curl", "-q", "--show-error", "--location", "--globoff",
++		"--proto", "=http,https", "--proto-redir", "=http,https",
++		"--connect-timeout", "30", "--speed-limit", "1", "--speed-time", "30",
++		"--dump-header", headers_file, "--output", output, "--user-agent", PROG,
++	];
++	if (type == "GET" && options.progress_size && params?.size > options.progress_size)
++		push(args, "--progress-bar");
++	else
++		push(args, "--silent");
++
++	let proxy = get_proxy_url(url);
++	if (proxy) {
++		let config = http_tmp + "/proxy";
++		if (!fs.writefile(config, sprintf("proxy = %J\nnoproxy = \"\"\n", proxy))) {
++			L.err("Cannot write the curl proxy configuration: %s\n", fs.error());
++			cleanup_http();
++			return null;
++		}
++		push(args, "--config", config);
++	}
+ 	else {
+-		L.log(2, "Using proxy_url '%s'\n", proxy_url);
+-		_uc_uc.set_url(proxy_url);
+-		_uc_uc.set_proxy_url(url);
+-	}
+-	_uc_cb.url      = url;
+-	_uc_cb.dst_file = dst_file;
+-
+-	return _uc_uc;
+-}
+-
+-function _del_uclient()
+-{
+-	_uc_uc?.free();
+-	_uc_uc = null;
+-	_uc_cb = null;
+-	gc();
+-}
+-
+-function _request(url, dst_file, params)
+-{
+-	//  uclient function for simple http requests
+-	//   url       = self explanatory
+-	//   dst_file  = result of request
+-	//   params    = dictionary of optional parameters:
+-	//     'type'      = 'GET' (default), 'HEAD' or 'POST'
+-	//     'json_data' =  json data, forces 'POST' implicitly
+-
+-	let json_data = params?.json_data;
+-	let type      = params?.type ?? "GET";
+-
+-	if (! (type in ["GET", "HEAD", "POST"])) {
+-		L.bug("Invalid request type '%s'\n", type);
+-	}
+-
+-	let start = time();
+-	let uc = _get_uclient(url, dst_file);
+-
+-	if (! uc.connect()) {
+-		L.err("Failed to connect\n");
++		push(args, "--proxy", "");
++	}
++
++	if (type == "HEAD")
++		push(args, "--head");
++	else
++		push(args, "--remove-on-error");
++
++	if (type == "POST") {
++		let body = http_tmp + "/body";
++		if (fs.writefile(body, json_data ?? "") == null) {
++			L.err("Cannot write the ASU request: %s\n", fs.error());
++			cleanup_http();
++			return null;
++		}
++		push(args, "--header", "Content-Type: application/json", "--data-binary", "@" + body);
++	}
++	push(args, "--url", url);
++
++	let code = system(args);
++	let raw = code == 0 ? fs.readfile(headers_file) : null;
++	cleanup_http();
++
++	let headers = raw ? response_headers(raw) : null;
++	if (!headers) {
++		L.err("HTTP request failed (curl status %d): %s\n", code, url);
+ 		return null;
+ 	}
+ 
+-	let headers = {
+-		"User-Agent": PROG,
+-	};
+-	let args = {
+-		headers: headers,
+-	};
+-
+-	if (json_data) {
+-		type = "POST";
+-		headers["Content-Type"] = "application/json";
+-		args["post_data"] = json_data;
+-	}
+-
+-	if (! uc.request(type, args)) {
+-		L.err("Failed to send request\n");
+-		return null;
+-	}
+-
+-	uloop.run();
+-
+-	if (_uc_cb.rsp_headers) {
+-		let elapsed = (time() - start) || 0.5;
+-		let bytes = fs.stat(dst_file).size;
+-		dl_stats.log(url, dst_file, bytes, elapsed);
+-
+-		L.log(4, "Response headers = %.2J\n", _uc_cb.rsp_headers);
+-
+-		if (options.keep) {
+-			let hdrs = fs.open(tmp.rsp_header, "w");
+-			hdrs.write(sprintf("%.J\n", _uc_cb.rsp_headers));
+-			hdrs.close();
+-		}
+-	}
+-
+-	return { ...uc.status(), type: type, headers: _uc_cb.rsp_headers };
++	let bytes = type == "HEAD" ? 0 : (fs.stat(dst_file)?.size ?? 0);
++	dl_stats.log(url, dst_file, bytes, (time() - start) || 0.5);
++	L.log(4, "Response headers = %.2J\n", headers);
++	if (options.keep)
++		fs.writefile(tmp.rsp_header, sprintf("%.J\n", headers));
++
++	return { status: headers.status, type, headers };
+ }
+ 
+ function read_tmp_file(file)
+@@ -2274,7 +2212,7 @@
+ 
+ 				L.log(1, "Image source: %s\n", img);
+ 
+-				let rsp = _request(img, dst);
++				let rsp = _request(img, dst, { size: image.size });
+ 				if (rsp?.status != 200) {
+ 					L.err("Couldn't download image %s\n", image.name);
+ 					return false;
+@@ -2396,7 +2334,7 @@
+ 	if (uloop.running()) uloop.end();
+ 	uloop.done();
+ 	ubus.term();
+-	_del_uclient();
++	cleanup_http();
+ 	exit(exit_status);
+ }
+ 

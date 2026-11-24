@@ -29,14 +29,12 @@ mkdir -p "$sdk/package/owut/patches"
 curl --fail --silent --show-error --location --retry 3 "$recipe_url" -o "$sdk/package/owut/Makefile"
 sed -i -E "s/^PKG_RELEASE:=[0-9]+$/PKG_RELEASE:=$package_release/" "$sdk/package/owut/Makefile"
 grep -Fx "PKG_RELEASE:=$package_release" "$sdk/package/owut/Makefile"
-patch --fuzz=0 -p1 -d "$sdk/package/owut" < "$repo/patches/owut-package/010-install-launcher.patch"
-mkdir -p "$sdk/package/owut/files"
-cp "$repo/patches/owut-package/owut-launcher" "$sdk/package/owut/files/"
+patch --fuzz=0 -p1 -d "$sdk/package/owut" < "$repo/patches/owut-package/010-add-curl-dependency.patch"
 cp "$repo"/patches/owut/*.patch "$sdk/package/owut/patches/"
 
 cd "$sdk"
 ./scripts/feeds update base packages luci
-./scripts/feeds install attendedsysupgrade-common rpcd ucode
+./scripts/feeds install attendedsysupgrade-common curl rpcd ucode
 cat > .config <<'EOF'
 CONFIG_TARGET_x86=y
 CONFIG_TARGET_x86_64=y

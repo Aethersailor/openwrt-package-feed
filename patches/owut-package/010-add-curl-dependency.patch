@@ -1,0 +1,11 @@
+--- a/Makefile
++++ b/Makefile
+@@ -25,7 +25,7 @@
+   TITLE:=owut - an OpenWrt Upgrade Tool
+   URL:=https://github.com/efahl/owut
+   DEPENDS:=+attendedsysupgrade-common \
+-    +rpcd-mod-file \
++    +rpcd-mod-file +curl \
+     +ucode +ucode-mod-fs +ucode-mod-ubus \
+     +ucode-mod-uci +ucode-mod-uclient +ucode-mod-uloop
+   PKGARCH:=all
