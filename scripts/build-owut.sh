@@ -45,6 +45,8 @@ CONFIG_PACKAGE_owut=y
 EOF
 make defconfig
 grep -Fx 'CONFIG_PACKAGE_owut=y' .config
+# The SDK top-level build normally creates this key before compiling packages.
+openssl ecparam -name prime256v1 -genkey -noout -out private-key.pem
 make -C package/owut TOPDIR="$sdk" compile V=s
 apk_path=$(find bin -type f -name "$expected")
 test -f "$apk_path"
