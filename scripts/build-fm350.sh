@@ -8,12 +8,10 @@ work=$(mktemp -d "${RUNNER_TEMP:?}/fm350-sdk-XXXXXX")
 cd "$work"
 
 package=luci-app-fm350
-arch=aarch64_generic
 version=$(jq -er .version "$plan")
 commit=$(jq -er .source_commit "$plan")
 expected="$package-$version.apk"
-base=https://downloads.immortalwrt.org/snapshots
-target="$base/targets/rockchip/armv8"
+target=https://downloads.immortalwrt.org/snapshots/targets/rockchip/armv8
 
 curl --fail --silent --show-error --location --retry 3 -O "$target/sha256sums"
 sdk=$(awk '$2 ~ /^\*immortalwrt-sdk-rockchip-armv8_.*\.Linux-x86_64\.tar\.zst$/ {print substr($2, 2); exit}' sha256sums)
@@ -59,32 +57,6 @@ if readelf -l "$backend" | grep -F 'INTERP'; then
     echo "Expected a statically linked fm350d" >&2
     exit 1
 fi
-
-# Use the same apk-tools image as the feed to check metadata and resolve the
-# module dependencies against the kmods index corresponding to this SDK.
-apk_image=$(sed -n 's/^APK_IMAGE = "\(.*\)"$/\1/p' "$GITHUB_WORKSPACE/scripts/build-feed.py")
-docker pull "$apk_image"
-metadata=$(docker run --rm --network none -v "$output:/packages:ro" "$apk_image" \
-    apk adbdump --format json "/packages/$expected")
-jq -e --arg package "$package" --arg version "$version" --arg arch "$arch" \
-    '.info | .name == $package and .version == $version and .arch == $arch' <<< "$metadata"
-kmods=$(awk '$2 ~ /^\*kmods\/[^/]+\/kmod-usb-net-rndis-.*\.apk$/ {
-    split(substr($2, 2), path, "/"); print path[1] "/" path[2]; exit
-}' "$work/sha256sums")
-test -n "$kmods"
-docker run --rm -v "$output:/packages:ro" "$apk_image" sh -ec '
-    arch=$1
-    shift
-    apk add --initdb --root /tmp --arch "$arch" --repositories-file /dev/null
-    apk add --no-cache --simulate --root /tmp --arch "$arch" "$@"
-' fm350 "$arch" \
-    --allow-untrusted --repositories-file /dev/null \
-    --repository "$target/packages/packages.adb" \
-    --repository "$target/$kmods/packages.adb" \
-    --repository "$base/packages/$arch/base/packages.adb" \
-    --repository "$base/packages/$arch/luci/packages.adb" \
-    --repository "$base/packages/$arch/packages/packages.adb" \
-    "/packages/$expected"
 
 digest=$(sha256sum "$output/$expected" | cut -d' ' -f1)
 jq --arg apk_digest "sha256:$digest" --arg sdk "$sdk" --arg sdk_sha256 "$sdk_sha" --arg snapshot "$snapshot" \

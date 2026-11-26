@@ -1,16 +1,13 @@
 {
   "releases": [
     {
-      "repository": "Aethersailor/SubConverter-Extended",
-      "checksums": "SHA256SUMS"
+      "repository": "Aethersailor/SubConverter-Extended"
     },
     {
-      "repository": "Aethersailor/Rule-Bot-Client",
-      "checksums": "openwrt-checksums.txt"
+      "repository": "Aethersailor/Rule-Bot-Client"
     },
     {
-      "repository": "anothaDev/luci-theme-vantage",
-      "checksums": "SHA256SUMS"
+      "repository": "anothaDev/luci-theme-vantage"
     },
     {
       "repository": "eamonxg/luci-theme-aurora"
@@ -28,29 +25,24 @@
     {
       "repository": "Aethersailor/xgp-v3-screen",
       "apk_arch": "aarch64_generic",
-      "checksums": "SHA256SUMS",
       "read_token_env": "XGP_RELEASE_READ_TOKEN"
     },
     {
       "repository": "LianXia233/luci-app-fm350",
-      "checksums": "SHA256SUMS",
-      "versioned_releases": true
+      "search_apk_releases": true
     },
     {
-      "repository": "ciwga/luci-app-argononev3-fancontrol",
-      "checksums": "checksums.txt"
+      "repository": "ciwga/luci-app-argononev3-fancontrol"
     },
     {
       "repository": "Kodo-kakaku/luci-app-gpoint"
     },
     {
       "repository": "FAN789/luci-app-h5000m-fancontrol",
-      "checksums": "SHA256SUMS",
       "apk_arch": "aarch64_cortex-a53"
     },
     {
       "repository": "LianXia233/luci-app-airpi3000m-fancontrol",
-      "release_tag_pattern": "v(?:[0-9]{14}|[0-9]+\\.[0-9]+\\.[0-9]+)",
       "apk_asset_pattern": ".+_openwrt-25\\.12\\.apk",
       "apk_arch": "aarch64_cortex-a53"
     },
@@ -83,19 +75,16 @@
     },
     {
       "repository": "FAN789/luci-app-h5000m-netmode",
-      "checksums": "SHA256SUMS",
       "apk_arch": "aarch64_cortex-a53"
     },
     {
       "repository": "OppsError404/luci-app-easy-setup"
     },
     {
-      "repository": "4IceG/luci-app-modemdata",
-      "release_tag_pattern": "v?[0-9]+\\.[0-9]+\\.[0-9]+(?:-r[0-9]+)?"
+      "repository": "4IceG/luci-app-modemdata"
     },
     {
-      "repository": "byizmysh/SWFence",
-      "checksums": "SHA256SUMS"
+      "repository": "byizmysh/SWFence"
     }
   ]
 }

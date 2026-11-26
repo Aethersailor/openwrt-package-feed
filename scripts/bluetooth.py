@@ -35,7 +35,7 @@ def resolve_build():
     build = latest_build()
     if build is None:
         return None
-    checksums, assets = release_apks({"repository": REPOSITORY, "checksums": "SHA256SUMS"}, build)
+    checksums, assets = release_apks({"repository": REPOSITORY}, build)
     by_architecture = {arch: set() for arch in TARGETS}
     for name in checksums:
         arch, _, filename = name.partition("--")

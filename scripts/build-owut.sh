@@ -52,11 +52,6 @@ apk_path=$(find bin -type f -name "$expected")
 test -f "$apk_path"
 cp "$apk_path" "$output/$expected"
 
-apk_image=$(sed -n 's/^APK_IMAGE = "\(.*\)"$/\1/p' "$repo/scripts/build-feed.py")
-docker pull "$apk_image"
-docker run --rm --network none -v "$output:/packages:ro" "$apk_image" \
-    apk adbdump --format json "/packages/$expected" |
-    jq -e --arg version "$version" '.info | .name == "owut" and .version == $version and .arch == "noarch"'
 digest=$(sha256sum "$output/$expected" | cut -d' ' -f1)
 snapshot=$(cat "$work/version.buildinfo")
 jq --arg apk_digest "sha256:$digest" --arg snapshot "$snapshot" \

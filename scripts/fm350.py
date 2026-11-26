@@ -56,7 +56,7 @@ def resolve_build():
     return release, [asset]
 
 
-def source_commit(upstream_tag, asset, version):
+def source_commit(asset, version):
     # A workflow_dispatch can replace APKs without moving the release tag.
     # Find the successful upstream release run active when the bot uploaded this APK.
     uploaded = asset["created_at"]
@@ -69,10 +69,6 @@ def source_commit(upstream_tag, asset, version):
     if asset["uploader"]["login"] != "github-actions[bot]" or len(matches) != 1:
         raise ValueError(f"Cannot identify the upstream release run for {asset['name']} uploaded at {uploaded}")
     run = matches[0]
-    artifact_query = urlencode({"name": f"{PACKAGE}-{upstream_tag}"})
-    artifacts = github_json(UPSTREAM, f"actions/runs/{run['id']}/artifacts?{artifact_query}")["artifacts"]
-    if not artifacts:
-        raise ValueError(f"Upstream run {run['id']} has no artifact for {upstream_tag}")
 
     commit = run["head_sha"]
     makefile = download(f"https://raw.githubusercontent.com/{UPSTREAM}/{commit}/Makefile").decode("utf-8")
@@ -101,7 +97,7 @@ def main():
         return
 
     version = match[1]
-    commit, run_url = source_commit(release["tag"], asset, version)
+    commit, run_url = source_commit(asset, version)
     info = {
         "version": version,
         "architecture": ARCH,

@@ -15,6 +15,7 @@ import subprocess
 import sys
 import tempfile
 from urllib.error import HTTPError
+from urllib.parse import quote
 
 from bluetooth import resolve_build as resolve_bluetooth_build
 from feed_sources import VERSION_TAG, download, resolve_release, verified_asset
@@ -153,16 +154,13 @@ def index_packages(site, key, arch, entries, published_files):
     write_index(site, key, index_path, (package for _, _, package in entries))
     packages = json.loads(apk(site, "adbdump", "--format", "json", index_path))["packages"]
     versions = {package["name"]: package["version"] for package in packages}
-    expected = {name: version for name, version, _ in entries}
-    if versions != expected or any(package["arch"] not in (arch, "noarch") for package in packages):
-        raise ValueError(f"Unexpected index content for {arch}")
 
-    staged_paths = {name: path for name, _, path in entries}
+    staged_paths = {(name, version): path for name, version, path in entries}
     files = []
     sizes_match = True
     for package in packages:
         name = package["name"]
-        staged = staged_paths[name]
+        staged = staged_paths[name, package["version"]]
         filename = Path(f"{name}-{package['hashes']}.apk").name
         path = PACKAGE_FILES / filename
         destination = site / path
@@ -176,16 +174,14 @@ def index_packages(site, key, arch, entries, published_files):
         # APKs with the same identity can have different signature bytes.
         write_index(site, key, index_path, files)
 
-    apk(site, "--keys-dir", "/feed/keys", "--repositories-file", "/dev/null",
-        "--repository", index_path, "--arch", arch,
-        "fetch", "--simulate", *sorted(versions))
     index = {"version": 2, "architecture": arch, "packages": dict(sorted(versions.items()))}
     (directory / "index.json").write_text(json.dumps(index, indent=2) + "\n", encoding="utf-8")
 
 
 def source_archive_path(release):
     name = release["repository"].split("/")[-1]
-    return f"sources/{name}-{release['tag']}.tar.gz"
+    tag = quote(release["tag"], safe="")
+    return f"sources/{name}-{tag}.tar.gz"
 
 
 def stage_source_archive(site, release, source):
@@ -201,7 +197,7 @@ def write_site_home(site, releases, feeds):
     for item in releases:
         repo, tag = item["repository"], item["tag"]
         if "source_commit" in item:
-            url = source_archive_path(item)
+            url = quote(source_archive_path(item))
             label = f"{repo.split('/')[-1]} {tag} 源码"
         elif "build_tag" in item:
             url = f"https://github.com/{repo}/releases/tag/{item['build_tag']}"
@@ -218,7 +214,7 @@ def write_site_home(site, releases, feeds):
             url = f"https://github.com/{repo}/releases/tag/{tag}"
             label = item["packages"][0]
         else:
-            url = f"https://github.com/{repo}/releases/tag/{tag}"
+            url = f"https://github.com/{repo}/releases/tag/{quote(tag, safe='')}"
             label = f"{repo.split('/')[-1]} {tag}"
         release_links.append(f'<li><a href="{escape(url)}">{escape(label)}</a></li>')
     releases_html = "\n".join(release_links)

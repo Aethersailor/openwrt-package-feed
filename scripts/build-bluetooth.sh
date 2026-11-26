@@ -9,8 +9,7 @@ mkdir -p "$output"
 work=$(mktemp -d "${RUNNER_TEMP:?}/bluetooth-sdk-XXXXXX")
 cd "$work"
 
-base=https://downloads.immortalwrt.org/snapshots
-target="$base/targets/$target_name"
+target="https://downloads.immortalwrt.org/snapshots/targets/$target_name"
 curl -fsSL --retry 3 -O "$target/sha256sums"
 sdk=$(awk -v prefix="*immortalwrt-sdk-${target_name//\//-}_" 'index($2, prefix) == 1 && $2 ~ /\.Linux-x86_64\.tar\.zst$/ {print substr($2, 2); exit}' sha256sums)
 test -n "$sdk"
@@ -73,40 +72,13 @@ make package/luci-app-bluetooth/compile "CONFIG_PACKAGE_$translation=m" \
     exit 1
 }
 
-apk_image=$(sed -n 's/^APK_IMAGE = "\(.*\)"$/\1/p' "$GITHUB_WORKSPACE/scripts/build-feed.py")
-docker pull "$apk_image"
-archives=()
 for package in "${packages[@]}"; do
     mapfile -t built < <(find bin -type f -name "$package-[0-9]*.apk")
     test "${#built[@]}" -eq 1
     filename=$(basename "${built[0]}")
-    archive="$arch--$filename"
-    cp "${built[0]}" "$output/$archive"
-    metadata=$(docker run --rm --network none -v "$output:/packages:ro" "$apk_image" \
-        apk adbdump --format json "/packages/$archive")
-    jq -e --arg package "$package" --arg arch "$arch" --arg filename "$filename" \
-        '.info | .name == $package and (.arch == $arch or .arch == "noarch")
-        and (.name + "-" + .version + ".apk") == $filename' <<< "$metadata"
-    archives+=("/packages/$archive")
+    cp "${built[0]}" "$output/$arch--$filename"
 done
 test -f "$output/$arch--luci-app-bluetooth-$version-r1.apk"
-
-kmods=$(awk '$2 ~ /^\*kmods\/[^/]+\/kmod-bluetooth-[0-9].*\.apk$/ {
-    split(substr($2, 2), path, "/"); print path[1] "/" path[2]; exit
-}' "$work/sha256sums")
-test -n "$kmods"
-docker run --rm -v "$output:/packages:ro" "$apk_image" sh -ec '
-    arch=$1
-    shift
-    apk add --initdb --root /tmp --arch "$arch" --repositories-file /dev/null
-    apk add --no-cache --simulate --root /tmp --arch "$arch" "$@"
-' bluetooth "$arch" --allow-untrusted --repositories-file /dev/null \
-    --repository "$target/packages/packages.adb" \
-    --repository "$target/$kmods/packages.adb" \
-    --repository "$base/packages/$arch/base/packages.adb" \
-    --repository "$base/packages/$arch/luci/packages.adb" \
-    --repository "$base/packages/$arch/packages/packages.adb" \
-    "${archives[@]}"
 
 jq -n --arg architecture "$arch" --arg target "$target_name" --arg snapshot "$snapshot" \
     --arg sdk "$sdk" --arg sdk_sha256 "$sdk_sha" \

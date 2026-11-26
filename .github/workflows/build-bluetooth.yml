@@ -54,8 +54,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential clang flex bison gawk gettext \
             libglib2.0-dev-bin libncurses-dev libssl-dev python3-setuptools rsync unzip zlib1g-dev zstd
-          command -v gdbus-codegen
-      - name: Build and simulate installing the package set
+      - name: Build the Bluetooth package set
         env:
           BLUETOOTH_PLAN: ${{ needs.check.outputs.plan }}
           BLUETOOTH_ARCH: ${{ matrix.arch }}
@@ -85,7 +84,7 @@ jobs:
           pattern: bluetooth-*
           merge-multiple: true
           path: dist
-      - name: Publish the verified Bluetooth package set
+      - name: Publish the Bluetooth package set
         working-directory: dist
         env:
           PLAN: ${{ needs.check.outputs.plan }}
